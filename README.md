@@ -28,7 +28,7 @@ The syntax to define a new variable, named *num*, as the number 2600 is `num : 2
 
 Functions have two parts: an argument list where each identifier is delimited by the `,` token, and the body (an expression list). For instance, one could write a function that multiply a number by 2 as `[ x | x * 2 ]`, or another function that sum two numbers as `[ x, y | x + y ]`.
 
-For function application there are two options available: the *fun@params* syntax (which is right-associative, and where the parameter list have high precedence), and the *fun{params}* syntax (which is left-associative, and where the parameter list have low precedence). So for example, the expression `f @ 1, 2 - 3` is equivalent to `(f @ 1, 2) - 3`. If instead we wanted to do the rest first we could do `f @ 1, (2 - 3)` or `f {1, 2 - 3}`.
+For function application there are two options available: the *fun@params* syntax (which is right-associative, and where the parameter list have high precedence), and the *fun{params}* syntax (which is left-associative, and where the parameter list have low precedence). So for example, the expression `f @ 1, 2 - 3` is equivalent to `(f @ 1, 2) - 3`. If instead we wanted to do the substraction first we could do `f @ 1, (2 - 3)` or `f {1, 2 - 3}`.
 
 This is how an interactive session with *ahci*, the Ad-hoc interpreter, looks like (the **λ** symbol is the prompt):
 ```
