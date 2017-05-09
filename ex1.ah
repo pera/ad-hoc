@@ -1,0 +1,12 @@
+---
+this is an untyped ad-hoc language example
+use ahc to compile and try this program
+---
+import 'io';
+
+EntryPoint : [ args |
+	world : 'world';
+	printf @ 'Hello %s!\n', world; -- same as: printf{'Hello %s!\n', world};
+	0 -- returns 0 to the system (final ; not required)
+];
+
