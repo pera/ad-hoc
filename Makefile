@@ -9,7 +9,7 @@ clean:
 grammar.tab.c: grammar.y
 	 bison -Wall -rall -d $<
 
-lex.yy.c: scanner.l grammar.tab.c
+lex.yy.c: lex.l grammar.tab.c
 	 flex $^
 
 parser.o: parser.c grammar.tab.c lex.yy.c
