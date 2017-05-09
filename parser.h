@@ -1,3 +1,6 @@
+#ifndef _AH_PARSER_H
+#define _AH_PARSER_H
+
 #include <stdbool.h>
 #include "list.h"
 #include "extra.h"
@@ -60,6 +63,19 @@ typedef struct ast {
     list_head *children;
 } ast;
 
+ast *new_ast(enum nodetype nodetype, ...);
+ast *new_ident(char*);
+ast *new_num(double);
+ast *new_bool(bool);
+ast *new_asgn(char*, ast*);
+ast *new_func(ast*, ast*);
+ast *new_env(ast*);
+ast *new_call(ast*, ast*);
+ast *new_if(ast*, ast*, ast*);
+
+void yyerror(ast**, char const*);
+int parse_string(char*, ast**);
+
 typedef struct symbol_ symbol;
 typedef struct symtab_ symtab;
 typedef struct node_function_ node_function;
@@ -80,12 +96,12 @@ typedef struct {
     } value;
 } value;
 
+#define NHASH 9973
+
 struct symbol_ {
 	char *name;
 	value *v_ptr; // TODO improve
 };
-
-#define NHASH 9973
 
 struct symtab_ {
 	symbol *head;
@@ -93,14 +109,15 @@ struct symtab_ {
 	unsigned int count;
 };
 
+/* type T_NIL */
+ast *NIL;
+
 /* type T_IDENTIFIER */
 typedef struct {
     enum nodetype nodetype;
     list_head siblings;
     char *i;
 } node_identifier;
-
-ast *NIL;
 
 /* type T_NUMERIC */
 typedef struct {
@@ -149,23 +166,5 @@ typedef struct {
     ast *f;
 } node_if;
 
-symbol *sym_add(symtab*, char*);
-symbol *sym_lookup(symtab*, char*);
-
-ast *new_ast(enum nodetype nodetype, ...);
-ast *new_ident(char*);
-ast *new_num(double);
-ast *new_bool(bool);
-ast *new_asgn(char*, ast*);
-ast *new_func(ast*, ast*);
-ast *new_env(ast*);
-ast *new_call(ast*, ast*);
-ast *new_if(ast*, ast*, ast*);
-
-void build_environment(symtab*, symtab*, symtab*, ast*);
-symtab *check_free_variables(symtab*, const node_function *const);
-
-void eval(ast*, symtab*, value*);
-
-int parse_string(char*, ast**);
+#endif
 

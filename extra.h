@@ -1,6 +1,8 @@
 #ifndef _AH_EXTRA_H
 #define _AH_EXTRA_H
 
+#include <stdio.h>
+
 #define BLACK "\x1B[30;1m"
 #define RED "\x1B[31;1m"
 #define GREEN "\x1B[32;1m"
@@ -30,3 +32,4 @@
 #endif
 
 #endif
+

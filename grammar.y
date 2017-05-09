@@ -5,7 +5,9 @@
 #include "parser.h"
 
 extern int yylex();
-extern int yyerror(ast**, const char*);
+/*
+extern int yyerror(ast**, char const*); // XXX eliminar?
+*/
 %}
 %error-verbose
 
