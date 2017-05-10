@@ -19,7 +19,7 @@
 "["         { return '['; }
 "]"         { return ']'; }
 "|"         { return '|'; }
- /* mathematical and logical operators */
+ /* mathematical operators */
 "+"         { return '+'; }
 "-"         { return '-'; }
 "*"         { return '*'; }
