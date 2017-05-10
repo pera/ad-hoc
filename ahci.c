@@ -41,13 +41,13 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, enum nodetype op) {
     n2 = res->value.n;
 
     switch (op) {
-    	case T_SUM:
+    	case T_ADDITION:
     		res->value.n = n1 + n2;
     		break;
-    	case T_REST:
+    	case T_SUBTRACTION:
     		res->value.n = n1 - n2;
     		break;
-    	case T_PRODUCT:
+    	case T_MULTIPLICATION:
     		res->value.n = n1 * n2;
     		break;
     	case T_DIVISION:
@@ -197,12 +197,12 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			break;
 		case T_CALL: // XXX check
 			({
-				AH_PRINT(RED "PASSING THROUGH T_CALL..." RESET);//XXX remove this
+				AH_PRINT(RED "PASSING THROUGH T_CALL...\n" RESET);//XXX remove this
 
-				node_identifier *i;
-				list_for_each_entry(i, ast_left(a)->children, siblings) {
-					AH_PRINT("~~~~~~~~~~~> args [%p]: %s\n", i, i->i);
-					build_environment(parent_symtab, local_symtab, env, (ast *)i);
+				ast *p;
+				list_for_each_entry(p, ast_left(a)->children, siblings) {
+					AH_PRINT("~~~~~~~~~~~> args [%p]: %s\n", p, nodetype_to_string[p->nodetype]);
+					build_environment(parent_symtab, local_symtab, env, p);
 				}
 
 				symtab *inner_symtab = new_symtab(local_symtab);
@@ -211,9 +211,9 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			});
 			break;
 		case T_LIST: // XXX check
-		case T_SUM:
-		case T_REST:
-		case T_PRODUCT:
+		case T_ADDITION:
+		case T_SUBTRACTION:
+		case T_MULTIPLICATION:
 		case T_DIVISION:
 		case T_EXPONENTIATION:
 		case T_ROOT:
@@ -233,11 +233,11 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			}
 			break;
 		case T_IF:
-			AH_PRINT("building --> if_expr");
+			AH_PRINT("building --> if_expr\n");
 			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->expr);
-			AH_PRINT("building --> if_true");
+			AH_PRINT("building --> if_true\n");
 			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->t);
-			AH_PRINT("building --> if_false");
+			AH_PRINT("building --> if_false\n");
 			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->f);
 			break;
 		default:
@@ -298,9 +298,9 @@ void eval(ast *a, symtab *st, value *res) {
                 if (res->type == NUMERIC)
 					res->value.n *= -1;
 				break;
-			case T_SUM:
-			case T_REST:
-			case T_PRODUCT:
+			case T_ADDITION:
+			case T_SUBTRACTION:
+			case T_MULTIPLICATION:
 			case T_DIVISION:
 			case T_EXPONENTIATION:
 			case T_ROOT:
@@ -435,12 +435,12 @@ void eval(ast *a, symtab *st, value *res) {
                         if (res->type == FUNCTION) {
 							symtab *env = check_free_variables(local_symtab, (node_function *) res->value.f);
 							if (env) {
-								AH_PRINT("ENV HAVE SYMBOLS, RETURNING CLOSURE");
+								AH_PRINT("ENV HAVE SYMBOLS, RETURNING CLOSURE\n");
 								res->type = CLOSURE;
 								res->value.c.fun = (node_function *)res->value.f;
 								res->value.c.env = env;
 							} else {
-								AH_PRINT("ENV IS EMPTY, RETURNING FUNCTION");
+								AH_PRINT("ENV IS EMPTY, RETURNING FUNCTION\n");
 							}
 						}
                     }

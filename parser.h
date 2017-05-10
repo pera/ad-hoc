@@ -24,9 +24,9 @@ typedef enum {
     _(T_FUNCTION) \
     _(T_ENV) \
     _(T_CALL) \
-    _(T_SUM) \
-    _(T_REST) \
-    _(T_PRODUCT) \
+    _(T_ADDITION) \
+    _(T_SUBTRACTION) \
+    _(T_MULTIPLICATION) \
     _(T_DIVISION) \
     _(T_EXPONENTIATION) \
     _(T_ROOT) \

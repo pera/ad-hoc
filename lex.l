@@ -26,6 +26,9 @@
 "/"         { return '/'; }
 "**"        { return EXP; }
 "//"        { return ROOT; }
+"log"       { return LOG; }
+"mod"       { return MOD; }
+"rem"       { return REM; }
 "="         { return '='; }
 "/="        { return NE; }
 "<"         { return '<'; }

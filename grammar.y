@@ -23,6 +23,9 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token EOL
 %token EXP
 %token ROOT
+%token LOG
+%token MOD
+%token REM
 %token NE
 %token LE
 %token GE
@@ -82,9 +85,9 @@ expr
 : lit
 | IDENT { $$ = new_ident($1); }
 | IDENT ':' expr { $$ = new_asgn($1, $3); }
-| expr '+' expr { $$ = new_ast(T_SUM, $1, $3); }
-| expr '-' expr { $$ = new_ast(T_REST, $1, $3); }
-| expr '*' expr { $$ = new_ast(T_PRODUCT, $1, $3); }
+| expr '+' expr { $$ = new_ast(T_ADDITION, $1, $3); }
+| expr '-' expr { $$ = new_ast(T_SUBTRACTION, $1, $3); }
+| expr '*' expr { $$ = new_ast(T_MULTIPLICATION, $1, $3); }
 | expr '/' expr { $$ = new_ast(T_DIVISION, $1, $3); }
 | expr EXP expr { $$ = new_ast(T_EXPONENTIATION, $1, $3); }
 | expr ROOT expr { $$ = new_ast(T_ROOT, $1, $3); }
