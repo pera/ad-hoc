@@ -61,7 +61,7 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, enum nodetype op) {
 			break;
     	default:
 			printf(RED "FATAL ERROR: invalid operator\n" RESET);
-        	exit(-1);
+        	exit(EXIT_FAILURE);
     }
 }
 
@@ -109,7 +109,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, enum nodetype op) {
 			break;
     	default:
 			printf(RED "FATAL ERROR: invalid operator\n" RESET);
-        	exit(-1);
+        	exit(EXIT_FAILURE);
     }
 }
 
@@ -144,7 +144,7 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, enum nodetype op) {
 			break;
     	default:
 			printf(RED "FATAL ERROR: invalid operator\n" RESET);
-        	exit(-1);
+        	exit(EXIT_FAILURE);
     }
 }
 
@@ -243,7 +243,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			       __func__,
 			       a->nodetype,
 			       nodetype_to_string[a->nodetype]);
-			exit(-1);
+			exit(EXIT_FAILURE);
 	}
 }
 
@@ -416,6 +416,17 @@ void eval(ast *a, symtab *st, value *res) {
                         yyerror(NULL, "Invalid parameter");
                         goto inv_param_exit; // XXX
                     }
+                    if (res->type == FUNCTION) {
+						symtab *env = check_free_variables(local_symtab, (node_function *) res->value.f);
+						if (env) {
+							AH_PRINT("ENV HAVE SYMBOLS, RETURNING CLOSURE\n");
+							res->type = CLOSURE;
+							res->value.c.fun = (node_function *)res->value.f;
+							res->value.c.env = env;
+						} else {
+							AH_PRINT("ENV IS EMPTY, RETURNING FUNCTION\n");
+						}
+					}
                     AH_PRINT(" PARAM: " GREEN "%s" RESET " [%p]: adding to %p\n", ((node_identifier*)i)->i, i, local_symtab);
                     set_value(sym_add(local_symtab, ((node_identifier*)i)->i), res);
                     get_value(sym_lookup(local_symtab, ((node_identifier*)i)->i), res);
@@ -447,7 +458,7 @@ void eval(ast *a, symtab *st, value *res) {
 		}
 	} else {
 		printf(RED "FATAL ERROR: eval null\n" RESET);
-        exit(-1);
+        exit(EXIT_FAILURE);
 	}
 }
 
@@ -507,6 +518,6 @@ int main(int argc, char **argv) {
 
     puts("good-bye :-)");
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 

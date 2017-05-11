@@ -50,6 +50,7 @@
 "cond"      { return COND; }
 "case"      { return CASE; }
  /* higher-order functions */
+"fix"       { return FIX; }
 "map"       { return MAP; }
 "fold"      { return FOLD; }
 "filter"    { return FILTER; }

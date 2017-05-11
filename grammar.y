@@ -37,6 +37,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token IF
 %token COND
 %token CASE
+%token FIX
 %token MAP
 %token FOLD
 %token FILTER

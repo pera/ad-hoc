@@ -53,6 +53,10 @@ test8: CFLAGS += -DAH_DEBUG
 test8: clean ahci
 	@echo "362888 - ([f | [x|x@x] @ [g | f@[args | (g@g)@args]]] @ [q | [w | if w<2 [1] [w*q{w-1}]]]) @ 9" | ./ahci
 
+test9: CFLAGS += -DAH_DEBUG 
+test9: clean ahci
+	@echo "[a|[b|[a|b@a]]@[c|a+c]] {3} {6}" | ./ahci
+
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci
 	./ahci
