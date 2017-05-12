@@ -13,7 +13,7 @@ void yyerror(ast **a, char const *s) {
 	fprintf(stderr, RED "ERROR: " RESET "%s\n", s);
 }
 
-ast *new_ast(enum nodetype nodetype, ...) {
+ast *new_ast(node_type type, ...) {
 	ast *a = malloc(sizeof(ast));
     INIT_LIST_HEAD(&a->siblings);
 
@@ -22,17 +22,17 @@ ast *new_ast(enum nodetype nodetype, ...) {
 		exit(0);
 	}
 
-	a->nodetype = nodetype;
+	a->type = type;
 
     va_list parameters;
-    va_start(parameters, nodetype);
+    va_start(parameters, type);
     a->children = &va_arg(parameters, ast*)->siblings;
      AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
-    if (a->nodetype != T_NEGATIVE && a->nodetype != T_NOT && a->nodetype != T_LIST) // XXX HACK fix this
+    if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST) // XXX HACK fix this
         list_add_tail(&va_arg(parameters, ast*)->siblings, a->children);
      AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
 
-	AH_PRINT("\t(!) new ast %s [%p]\n", nodetype_to_string[nodetype], a);
+	AH_PRINT("\t(!) new ast %s [%p]\n", node_type_to_string[type], a);
 
 	return a;
 }
@@ -46,7 +46,7 @@ ast *new_ident(char *i) {
 		exit(0);
 	}
 
-    a->nodetype = T_IDENTIFIER;
+    a->type = NT_IDENTIFIER;
     a->i = i;
     AH_PRINT("\t(!) new identifier [%p]: %s\n", a, i);
 
@@ -62,7 +62,7 @@ ast *new_num(double d) {
 		exit(0);
 	}
 
-	a->nodetype = T_NUMERIC;
+	a->type = NT_NUMERIC;
 	a->number = d;
 	AH_PRINT("\t(!) new num [%p]: %f\n", a, d);
 
@@ -78,7 +78,7 @@ ast *new_bool(bool b) {
 		exit(0);
 	}
 
-	a->nodetype = T_BOOLEAN;
+	a->type = NT_BOOLEAN;
 	a->value = b;
 	AH_PRINT("\t(!) new boolean [%p]: %s\n", a, b?"true":"false");
 
@@ -94,7 +94,7 @@ ast *new_asgn(char *i, ast *v) {
 		exit(0);
 	}
 
-	a->nodetype = T_ASSIGNMENT;
+	a->type = NT_ASSIGNMENT;
 	a->i = i;
 	a->v = v;
 
@@ -110,7 +110,7 @@ ast *new_func(ast *args, ast *expr_list) {
 		exit(0);
 	}
 
-	a->nodetype = T_FUNCTION;
+	a->type = NT_FUNCTION;
     a->args = &args->siblings;
     a->children = &expr_list->siblings;
 
@@ -128,7 +128,7 @@ ast *new_env(ast *expr_list) {
 		exit(0);
 	}
 
-	a->nodetype = T_ENV;
+	a->type = NT_ENV;
     a->children = &expr_list->siblings;
 
 	AH_PRINT("\t(!) new env [%p]: expr_list [%p]\n", a, expr_list);
@@ -145,9 +145,9 @@ ast *new_call(ast *func, ast *param_list) {
 		exit(0);
 	}
 
-	a->nodetype = T_CALL;
+	a->type = NT_CALL;
 
-    a->children = &new_ast(T_LIST, param_list)->siblings;
+    a->children = &new_ast(NT_LIST, param_list)->siblings;
     list_add_tail(&func->siblings, a->children);
 
 	AH_PRINT("\t(!) new call [%p]\n", a);
@@ -173,7 +173,7 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 		exit(0);
 	}
 
-	a->nodetype = T_IF;
+	a->type = NT_IF;
 
     a->expr = expr;
     a->t = t;

@@ -5,48 +5,52 @@
 #include "list.h"
 #include "extra.h"
 
-typedef enum {
-    NOTHING,
-    BOOLEAN,
-    NUMERIC,
-    FUNCTION,
-    CLOSURE,
-} value_type;
+#define AH_VALUE_TYPE(_) \
+    _(VT_NOTHING) \
+    _(VT_BOOLEAN) \
+    _(VT_NUMERIC) \
+    _(VT_FUNCTION) \
+    _(VT_CLOSURE) \
+    _(VT__END) \
 
-#define AH_NODETYPE(_) \
-    _(T_NOTYPE) \
-    _(T_NIL) \
-    _(T_IDENTIFIER) \
-    _(T_NUMERIC) \
-    _(T_BOOLEAN) \
-    _(T_LIST) \
-    _(T_ASSIGNMENT) \
-    _(T_FUNCTION) \
-    _(T_ENV) \
-    _(T_CALL) \
-    _(T_ADDITION) \
-    _(T_SUBTRACTION) \
-    _(T_MULTIPLICATION) \
-    _(T_DIVISION) \
-    _(T_EXPONENTIATION) \
-    _(T_ROOT) \
-    _(T_NEGATIVE) \
-    _(T_EQUAL) \
-    _(T_NOTEQUAL) \
-    _(T_LESS) \
-    _(T_LESSEQUAL) \
-    _(T_GREATER) \
-    _(T_GREATEREQUAL) \
-    _(T_AND) \
-    _(T_OR) \
-    _(T_NOT) \
-    _(T_IF) \
-    _(T__END) \
+AH_DEFINE_ASSOCIATIVE_ENUM(value_type, value_type_to_string, AH_VALUE_TYPE);
+typedef enum value_type value_type;
 
-AH_DEFINE_ASSOCIATIVE_ENUM(nodetype, nodetype_to_string, AH_NODETYPE);
+#define AH_NODE_TYPE(_) \
+    _(NT_NOTYPE) \
+    _(NT_NIL) \
+    _(NT_IDENTIFIER) \
+    _(NT_NUMERIC) \
+    _(NT_BOOLEAN) \
+    _(NT_LIST) \
+    _(NT_ASSIGNMENT) \
+    _(NT_FUNCTION) \
+    _(NT_ENV) \
+    _(NT_CALL) \
+    _(NT_ADDITION) \
+    _(NT_SUBTRACTION) \
+    _(NT_MULTIPLICATION) \
+    _(NT_DIVISION) \
+    _(NT_EXPONENTIATION) \
+    _(NT_ROOT) \
+    _(NT_NEGATIVE) \
+    _(NT_EQUAL) \
+    _(NT_NOTEQUAL) \
+    _(NT_LESS) \
+    _(NT_LESSEQUAL) \
+    _(NT_GREATER) \
+    _(NT_GREATEREQUAL) \
+    _(NT_AND) \
+    _(NT_OR) \
+    _(NT_NOT) \
+    _(NT_IF) \
+    _(NT__END) \
+
+AH_DEFINE_ASSOCIATIVE_ENUM(node_type, node_type_to_string, AH_NODE_TYPE);
+typedef enum node_type node_type;
 
 #define AH_NODE_INFO(n) \
-    AH_PRINT("Node " BLUE #n RESET " [%p] is a " YELLOW "%s" RESET "\n", n, nodetype_to_string[n->nodetype]);
+    AH_PRINT("Node " BLUE #n RESET " [%p] is a " YELLOW "%s" RESET "\n", n, node_type_to_string[n->type]);
 
 #define ast_first_child(pos) \
 	list_entry((pos)->children, typeof(*(pos)), siblings)
@@ -58,12 +62,12 @@ AH_DEFINE_ASSOCIATIVE_ENUM(nodetype, nodetype_to_string, AH_NODETYPE);
 	list_entry((pos)->children->next, typeof(*(pos)), siblings)
 
 typedef struct ast {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
     list_head *children;
 } ast;
 
-ast *new_ast(enum nodetype nodetype, ...);
+ast *new_ast(node_type type, ...);
 ast *new_ident(char*);
 ast *new_num(double);
 ast *new_bool(bool);
@@ -109,57 +113,57 @@ struct symtab_ {
 	unsigned int count;
 };
 
-/* type T_NIL */
+/* type NT_NIL */
 ast *NIL;
 
-/* type T_IDENTIFIER */
+/* type NT_IDENTIFIER */
 typedef struct {
-    enum nodetype nodetype;
+    node_type type;
     list_head siblings;
     char *i;
 } node_identifier;
 
-/* type T_NUMERIC */
+/* type NT_NUMERIC */
 typedef struct {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
 	double number;
 } node_numval;
 
-/* type T_BOOLEAN */
+/* type NT_BOOLEAN */
 typedef struct {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
 	bool value;
 } node_boolval;
 
-/* type T_ASSIGNMENT */
+/* type NT_ASSIGNMENT */
 typedef struct {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
     list_head *children;
     char *i;
     ast *v;
 } node_assignment;
 
-/* type T_FUNCTION */
+/* type NT_FUNCTION */
 struct node_function_ {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
     list_head *children;
     list_head *args;
 };
 
-/* type T_ENV */
+/* type NT_ENV */
 typedef struct {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
     list_head *children;
 } node_env;
 
-/* type T_IF */
+/* type NT_IF */
 typedef struct {
-	enum nodetype nodetype;
+	node_type type;
     list_head siblings;
     ast *expr;
     ast *t;

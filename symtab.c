@@ -83,10 +83,10 @@ void free_symtab(symtab *st) {
 void set_value(symbol *s, value *res) {
     if (s) {
     	switch (res->type) {
-    		case BOOLEAN:
-    		case NUMERIC:
-    		case FUNCTION:
-    		case CLOSURE:
+    		case VT_BOOLEAN:
+    		case VT_NUMERIC:
+    		case VT_FUNCTION:
+    		case VT_CLOSURE:
     			s->v_ptr = malloc(sizeof(value));
     			memcpy(s->v_ptr, res, sizeof(value));
     			break;
@@ -95,7 +95,7 @@ void set_value(symbol *s, value *res) {
 				exit(-1);
     	}
     } else {
-    	res->type = NOTHING;
+    	res->type = VT_NOTHING;
     }
 }
 
@@ -105,7 +105,7 @@ void get_value(symbol *s, value *res) {
         //res->value = s->v_ptr->value;
         *res = *s->v_ptr;
     } else {
-		res->type = NOTHING;
+		res->type = VT_NOTHING;
 	}
 }
 

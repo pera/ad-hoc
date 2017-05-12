@@ -86,22 +86,22 @@ expr
 : lit
 | IDENT { $$ = new_ident($1); }
 | IDENT ':' expr { $$ = new_asgn($1, $3); }
-| expr '+' expr { $$ = new_ast(T_ADDITION, $1, $3); }
-| expr '-' expr { $$ = new_ast(T_SUBTRACTION, $1, $3); }
-| expr '*' expr { $$ = new_ast(T_MULTIPLICATION, $1, $3); }
-| expr '/' expr { $$ = new_ast(T_DIVISION, $1, $3); }
-| expr EXP expr { $$ = new_ast(T_EXPONENTIATION, $1, $3); }
-| expr ROOT expr { $$ = new_ast(T_ROOT, $1, $3); }
-| '-' expr %prec NEG { $$ = new_ast(T_NEGATIVE, $2); }
-| expr '=' expr { $$ = new_ast(T_EQUAL, $1, $3); }
-| expr NE expr { $$ = new_ast(T_NOTEQUAL, $1, $3); }
-| expr '<' expr { $$ = new_ast(T_LESS, $1, $3); }
-| expr LE expr { $$ = new_ast(T_LESSEQUAL, $1, $3); }
-| expr '>' expr { $$ = new_ast(T_GREATER, $1, $3); }
-| expr GE expr { $$ = new_ast(T_GREATEREQUAL, $1, $3); }
-| expr AND expr { $$ = new_ast(T_AND, $1, $3); }
-| expr OR expr { $$ = new_ast(T_OR, $1, $3); }
-| NOT expr { $$ = new_ast(T_NOT, $2); }
+| expr '+' expr { $$ = new_ast(NT_ADDITION, $1, $3); }
+| expr '-' expr { $$ = new_ast(NT_SUBTRACTION, $1, $3); }
+| expr '*' expr { $$ = new_ast(NT_MULTIPLICATION, $1, $3); }
+| expr '/' expr { $$ = new_ast(NT_DIVISION, $1, $3); }
+| expr EXP expr { $$ = new_ast(NT_EXPONENTIATION, $1, $3); }
+| expr ROOT expr { $$ = new_ast(NT_ROOT, $1, $3); }
+| '-' expr %prec NEG { $$ = new_ast(NT_NEGATIVE, $2); }
+| expr '=' expr { $$ = new_ast(NT_EQUAL, $1, $3); }
+| expr NE expr { $$ = new_ast(NT_NOTEQUAL, $1, $3); }
+| expr '<' expr { $$ = new_ast(NT_LESS, $1, $3); }
+| expr LE expr { $$ = new_ast(NT_LESSEQUAL, $1, $3); }
+| expr '>' expr { $$ = new_ast(NT_GREATER, $1, $3); }
+| expr GE expr { $$ = new_ast(NT_GREATEREQUAL, $1, $3); }
+| expr AND expr { $$ = new_ast(NT_AND, $1, $3); }
+| expr OR expr { $$ = new_ast(NT_OR, $1, $3); }
+| NOT expr { $$ = new_ast(NT_NOT, $2); }
 | '(' expr ')' { $$ = $2; }
 | env
 | '[' args '|' expr_list ']' { $$ = new_func($2, $4); }
