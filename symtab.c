@@ -86,7 +86,6 @@ void set_value(symbol *s, value *res) {
     		case VT_BOOLEAN:
     		case VT_NUMERIC:
     		case VT_FUNCTION:
-    		case VT_CLOSURE:
     			s->v_ptr = malloc(sizeof(value));
     			memcpy(s->v_ptr, res, sizeof(value));
     			break;

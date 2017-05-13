@@ -16,7 +16,7 @@ void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
 void eval(ast*, symtab*, value*);
 
 void build_environment(symtab*, symtab*, symtab*, ast*);
-symtab *check_free_variables(symtab*, const node_function *const);
+symtab *get_environment(symtab*, const node_function *const);
 
 // binary operations: numerical -> numerical -> numerical
 void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
@@ -162,7 +162,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 				} else {
 					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
 					if (res.type == VT_FUNCTION) {
-						build_environment(parent_symtab, local_symtab, env, res.value.f);
+						build_environment(parent_symtab, local_symtab, env, (ast *)res.value.f.node);
 					} 
 					set_value(sym_add(env, ((node_identifier *)a)->i), &res);
 				}
@@ -247,7 +247,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 	}
 }
 
-symtab *check_free_variables(symtab *parent_symtab, const node_function *const fun) {
+symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
     AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
 
 	symtab *tmp_symtab = new_symtab(NULL); // XXX To avoid lookup on outer scopes
@@ -270,11 +270,16 @@ symtab *check_free_variables(symtab *parent_symtab, const node_function *const f
     	AH_PRINT("Temp environment unused, freeing...\n");
     	free_symtab(env);
     	env = NULL;
-    }
+	}
 
-    AH_PRINT(BLUE "================================\n" RESET);
+    if (env) AH_PRINT(BLUE "=== (returning closure) ========\n" RESET);
+    else     AH_PRINT(BLUE "=== (returning nothing) ========\n" RESET);
 
     return env;
+}
+
+void eval_expr_list(ast *a, symtab *st, value *res) {
+	// TODO
 }
 
 void eval(ast *a, symtab *st, value *res) {
@@ -362,7 +367,7 @@ void eval(ast *a, symtab *st, value *res) {
                 list_for_each_entry(p, a->children, siblings) {
                     eval(p, local_symtab, res);
                 }
-                free_symtab(local_symtab);
+                free_symtab(local_symtab); // XXX return closure
             	break;
             }
             case NT_FUNCTION: {
@@ -374,11 +379,13 @@ void eval(ast *a, symtab *st, value *res) {
                     AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
                 }
                 res->type = VT_FUNCTION;
-                res->value.f = a;
+                res->value.f.node = (node_function *)a;
+                res->value.f.env = NULL;
                 break;
             }
             case NT_CALL: {
                 ast *param_list = ast_left(a);
+
                 eval(ast_right(a), st, res);
     			if (res->type == VT_NOTHING) return;
 
@@ -387,13 +394,13 @@ void eval(ast *a, symtab *st, value *res) {
 
                 switch (res->type) {
                     case VT_FUNCTION:
- 						fun = (node_function*)res->value.f;
-						local_symtab = new_symtab(st);
-						break;
-					case VT_CLOSURE:
- 						fun = (node_function*)res->value.c.fun;
-						local_symtab = new_symtab(res->value.c.env);
-						local_symtab->parent->parent = st;
+ 						fun = (node_function*)res->value.f.node;
+						if (res->value.f.env) { // XXX checkear esto
+							local_symtab = new_symtab(res->value.f.env);
+							local_symtab->parent->parent = st; // ???? XXX
+						} else {
+							local_symtab = new_symtab(st);
+						}
 						break;
 					default:
         				printf(RED "TYPE ERROR: " RESET "LHS operand is not a function.\n");
@@ -402,50 +409,33 @@ void eval(ast *a, symtab *st, value *res) {
 				}
 
                 ast *p;
-                list_for_each_entry(p, param_list->children, siblings) {
-                    AH_PRINT(" p [%p] | %s | next:%p\n", p, node_type_to_string[p->type], p->siblings.next);
-                }
 
-                AH_PRINT("Assigning params to fun [%p]...\n", fun);
+                /* evaluando parametros y asignando argumentos */
                 node_identifier *i;
                 p = list_entry(param_list->children, ast, siblings);
                 list_for_each_entry(i, fun->args, siblings) {
-                    AH_PRINT(" PARAM: " CYAN "%s" RESET " [%p]: eval...\n", ((node_identifier*)i)->i, i);
 					eval((ast *)p, st, res);
                     if (res->type == VT_NOTHING) {
                         yyerror(NULL, "Invalid parameter");
                         goto inv_param_exit; // XXX
                     }
-                    if (res->type == VT_FUNCTION) {
-						symtab *env = check_free_variables(local_symtab, (node_function *) res->value.f);
-						if (env) {
-							AH_PRINT("ENV HAVE SYMBOLS, RETURNING CLOSURE\n");
-							res->type = VT_CLOSURE;
-							res->value.c.fun = (node_function *)res->value.f;
-							res->value.c.env = env;
-						} else {
-							AH_PRINT("ENV IS EMPTY, RETURNING FUNCTION\n");
-						}
+                    if (res->type == VT_FUNCTION && !res->value.f.env) {
+						res->value.f.env = get_environment(local_symtab, res->value.f.node);
 					}
-                    AH_PRINT(" PARAM: " GREEN "%s" RESET " [%p]: adding to %p\n", ((node_identifier*)i)->i, i, local_symtab);
                     set_value(sym_add(local_symtab, ((node_identifier*)i)->i), res);
-                    get_value(sym_lookup(local_symtab, ((node_identifier*)i)->i), res);
                     p = list_next_entry(p,siblings);
                 }
+
+                /* evaluando expr_list de la funcion */
                 list_for_each_entry(p, fun->children, siblings) {
                     eval((ast *)p, local_symtab, res);
                     // XXX do this just for the last p (ie the returned value)
-                    AH_PRINT("p> [%p] type: %s\n", p, node_type_to_string[p->type]);
-                    if (res->type == VT_FUNCTION) {
-						symtab *env = check_free_variables(local_symtab, (node_function *) res->value.f);
-						if (env) {
-							AH_PRINT("ENV HAVE SYMBOLS, RETURNING CLOSURE\n");
-							res->type = VT_CLOSURE;
-							res->value.c.fun = (node_function *)res->value.f;
-							res->value.c.env = env;
-						} else {
-							AH_PRINT("ENV IS EMPTY, RETURNING FUNCTION\n");
-						}
+                	if (res->type == VT_NOTHING) {
+                    	yyerror(NULL, "Not a function");
+                    	goto inv_param_exit; // XXX
+                	}
+                    if (res->type == VT_FUNCTION && !res->value.f.env) {
+						res->value.f.env = get_environment(local_symtab, res->value.f.node);
 					}
                 }
                 inv_param_exit:
@@ -454,7 +444,7 @@ void eval(ast *a, symtab *st, value *res) {
             }
             default:
                 yyerror(NULL, "unknown node type");
-                // TODO deberia cambiar res?
+				res->type = VT_NOTHING;
 		}
 	} else {
 		printf(RED "FATAL ERROR: eval null\n" RESET);
@@ -499,10 +489,7 @@ int main(int argc, char **argv) {
             		printf("==> %f\n", res.value.n);
             		break;
             	case VT_FUNCTION:
-            		printf("==> function [%p]\n", res.value.f);
-            		break;
-            	case VT_CLOSURE:
-            		printf("==> closure [%p]\n", res.value.c.fun);
+            		printf("==> function [%p]\n", res.value.f.node); // TODO add env if closure
             		break;
             	case VT_NOTHING:
             		break;

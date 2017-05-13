@@ -10,7 +10,6 @@
     _(VT_BOOLEAN) \
     _(VT_NUMERIC) \
     _(VT_FUNCTION) \
-    _(VT_CLOSURE) \
     _(VT__END) \
 
 AH_DEFINE_ASSOCIATIVE_ENUM(value_type, value_type_to_string, AH_VALUE_TYPE);
@@ -83,20 +82,16 @@ int parse_string(char*, ast**);
 typedef struct symbol_ symbol;
 typedef struct symtab_ symtab;
 typedef struct node_function_ node_function;
-typedef struct closure_ closure;
-
-struct closure_ {
-	symtab *env;
-	node_function *fun;
-};
 
 typedef struct {
     value_type type;
     union {
         bool b;
         double n;
-        ast *f;
-        closure c;
+		struct {
+			symtab *env;
+			node_function *node;
+		} f;
     } value;
 } value;
 
