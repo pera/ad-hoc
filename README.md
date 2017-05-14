@@ -1,6 +1,6 @@
 # Ad-hoc programming language
 
-Ad-hoc is an experimental programming language currently supporting the following features: first-class functions, immutability, lambda terms, recursive definitions, closures, and lexical and dynamic scopes.
+Ad-hoc is an experimental programming language currently supporting the following features: first-class functions, immutability, lambda terms, recursion, closures, lexical and dynamic scopes, and deep binding.
 
 ## Building Instructions
 
@@ -37,4 +37,11 @@ This is how an interactive session with *ahci*, the Ad-hoc interpreter, looks li
 λ fib@10
 ==> 55
 ```
+
+Shown below is a factorial function defined with a non-lazy fixed point combinator:
+```
+Y : [f | [x|x@x] @ [g | f@[a | (g@g)@a]]]
+fac : Y @ [f | [x | if x<2 [1] [x*f{x-1}]]]
+```
+
 Since the REPL uses the GNU Readline library to manage the user input, you can use all the standard key bindings, like the Up/Down-arrow keys for instance, to navigate the current session history. To quit use either ctrl+d or ctrl+c.
