@@ -145,7 +145,7 @@ ast *new_call(ast *func, ast *param_list) {
 		exit(0);
 	}
 
-	a->type = NT_CALL;
+	a->type = NT_APPLY;
 
     a->children = &new_ast(NT_LIST, param_list)->siblings;
     list_add_tail(&func->siblings, a->children);

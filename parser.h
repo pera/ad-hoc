@@ -25,7 +25,7 @@ typedef enum value_type value_type;
     _(NT_ASSIGNMENT) \
     _(NT_FUNCTION) \
     _(NT_ENV) \
-    _(NT_CALL) \
+    _(NT_APPLY) \
     _(NT_ADDITION) \
     _(NT_SUBTRACTION) \
     _(NT_MULTIPLICATION) \
