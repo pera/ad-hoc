@@ -30,18 +30,20 @@ Functions have two parts: an argument list where each identifier is delimited by
 
 For function application there are two options available: the *fun@params* syntax (which is right-associative, and where the parameter list has high precedence), and the *fun{params}* syntax (which is left-associative, and where the parameter list has low precedence). So for example, the expression `f @ 1, 2 - 3` is equivalent to `(f @ 1, 2) - 3`. If instead we wanted to do the substraction first we could write `f @ 1, (2 - 3)` or `f {1, 2 - 3}`.
 
+Shown below is a factorial function example defined with a non-lazy fixed point combinator:
+```
+Y : [f | [x|x@x] @ [g | f@[a | (g@g)@a]]]
+fac : Y @ [f | [x | if x<2 [1] [x*f{x-1}]]]
+```
+
+## The REPL
+
 This is how an interactive session with *ahci*, the Ad-hoc interpreter, looks like (the **λ** symbol is the prompt):
 ```
 λ fib : [ n | if n<2 [n] [fib{n-1} + fib{n-2}] ]
 ==> function [0x1221c20]
 λ fib@10
 ==> 55
-```
-
-Shown below is a factorial function defined with a non-lazy fixed point combinator:
-```
-Y : [f | [x|x@x] @ [g | f@[a | (g@g)@a]]]
-fac : Y @ [f | [x | if x<2 [1] [x*f{x-1}]]]
 ```
 
 Since the REPL uses the GNU Readline library to manage the user input, you can use all the standard key bindings, like the Up/Down-arrow keys for instance, to navigate the current session history. To quit use either ctrl+d or ctrl+c.
