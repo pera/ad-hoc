@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 typedef struct list_head {
-    struct list_head *next, *prev;
+	struct list_head *next, *prev;
 } list_head;
 
 #define container_of(ptr, type, member) ({ \
@@ -28,19 +28,19 @@ typedef struct list_head {
              pos = pos->member.next != (head) ? list_next_entry(pos, member) : NULL)
 
 static inline void INIT_LIST_HEAD(struct list_head *list) {
-    list->next = list;
-    list->prev = list;
+	list->next = list;
+	list->prev = list;
 }
 
 static inline void __list_add(list_head *new, list_head *prev, list_head *next) {
-    next->prev = new;
-    new->next = next;
-    new->prev = prev;
-    prev->next = new;
+	next->prev = new;
+	new->next = next;
+	new->prev = prev;
+	prev->next = new;
 }
 
 static inline void list_add(list_head *new, list_head *head) {
-    __list_add(new, head, head->next);
+	__list_add(new, head, head->next);
 }
 
 static inline void list_add_tail(struct list_head *new, struct list_head *head)

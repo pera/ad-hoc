@@ -15,7 +15,7 @@ void yyerror(ast **a, char const *s) {
 
 ast *new_ast(node_type type, ...) {
 	ast *a = malloc(sizeof(ast));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -24,13 +24,13 @@ ast *new_ast(node_type type, ...) {
 
 	a->type = type;
 
-    va_list parameters;
-    va_start(parameters, type);
-    a->children = &va_arg(parameters, ast*)->siblings;
-     AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
-    if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST) // XXX HACK fix this
-        list_add_tail(&va_arg(parameters, ast*)->siblings, a->children);
-     AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
+	va_list parameters;
+	va_start(parameters, type);
+	a->children = &va_arg(parameters, ast*)->siblings;
+	 AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
+	if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST) // XXX HACK fix this
+		list_add_tail(&va_arg(parameters, ast*)->siblings, a->children);
+	AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
 
 	AH_PRINT("\t(!) new ast %s [%p]\n", node_type_to_string[type], a);
 
@@ -39,23 +39,23 @@ ast *new_ast(node_type type, ...) {
 
 ast *new_ident(char *i) {
 	node_identifier *a = malloc(sizeof(node_identifier));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
 		exit(0);
 	}
 
-    a->type = NT_IDENTIFIER;
-    a->i = i;
-    AH_PRINT("\t(!) new identifier [%p]: %s\n", a, i);
+	a->type = NT_IDENTIFIER;
+	a->i = i;
+	AH_PRINT("\t(!) new identifier [%p]: %s\n", a, i);
 
-    return (ast *)a;
+	return (ast *)a;
 }
 
 ast *new_num(double d) {
 	node_numval *a = malloc(sizeof(node_numval));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -71,7 +71,7 @@ ast *new_num(double d) {
 
 ast *new_bool(bool b) {
 	node_boolval *a = malloc(sizeof(node_boolval));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -87,7 +87,7 @@ ast *new_bool(bool b) {
 
 ast *new_asgn(char *i, ast *v) {
 	node_assignment *a = malloc(sizeof(node_assignment));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -111,8 +111,8 @@ ast *new_func(ast *args, ast *expr_list) {
 	}
 
 	a->type = NT_FUNCTION;
-    a->args = &args->siblings;
-    a->children = &expr_list->siblings;
+	a->args = &args->siblings;
+	a->children = &expr_list->siblings;
 
 	AH_PRINT("\t(!) new func [%p]: args [%p] | expr_list [%p]\n", a, args, expr_list);
 
@@ -129,7 +129,7 @@ ast *new_env(ast *expr_list) {
 	}
 
 	a->type = NT_ENV;
-    a->children = &expr_list->siblings;
+	a->children = &expr_list->siblings;
 
 	AH_PRINT("\t(!) new env [%p]: expr_list [%p]\n", a, expr_list);
 
@@ -138,7 +138,7 @@ ast *new_env(ast *expr_list) {
 
 ast *new_call(ast *func, ast *param_list) {
 	ast *a = malloc(sizeof(ast));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -147,26 +147,17 @@ ast *new_call(ast *func, ast *param_list) {
 
 	a->type = NT_APPLY;
 
-    a->children = &new_ast(NT_LIST, param_list)->siblings;
-    list_add_tail(&func->siblings, a->children);
+	a->children = &new_ast(NT_LIST, param_list)->siblings;
+	list_add_tail(&func->siblings, a->children);
 
 	AH_PRINT("\t(!) new call [%p]\n", a);
-
-    /*
-    AH_PRINT("=== PARAMETERS ===\n");
-    ast *p;
-    list_for_each_entry(p, &param_list->siblings, siblings) {
-    	AH_NODE_INFO(p);
-    }
-    AH_PRINT("==================\n");
-    */
 
 	return a;
 }
 
 ast *new_if(ast *expr, ast *t, ast *f) {
 	node_if *a = malloc(sizeof(node_if));
-    INIT_LIST_HEAD(&a->siblings);
+	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
@@ -175,9 +166,9 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 
 	a->type = NT_IF;
 
-    a->expr = expr;
-    a->t = t;
-    a->f = f;
+	a->expr = expr;
+	a->t = t;
+	a->f = f;
 
 	AH_PRINT("\t(!) new if [%p]\n", a);
 
@@ -185,6 +176,6 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 }
 
 void free_ast(ast **a) {
-    *a = NULL; // TODO :)
+	*a = NULL; // TODO :)
 }
 
