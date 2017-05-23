@@ -10,10 +10,25 @@
         _(VT_BOOLEAN) \
         _(VT_NUMERIC) \
         _(VT_FUNCTION) \
+        _(VT_LIST) \
         _(VT__END) \
 
 AH_DEFINE_ASSOCIATIVE_ENUM(value_type, value_type_to_string, AH_VALUE_TYPE);
 typedef enum value_type value_type;
+
+#define AH_FUNCTION_TYPE(_) \
+        _(FT_NEW) \
+        _(FT_MAP) \
+        _(FT_FOLDL) \
+        _(FT_FOLDR) \
+        _(FT_FILTER) \
+        _(FT_HEAD) \
+        _(FT_TAIL) \
+        _(FT_REVERSE) \
+        _(FT__END) \
+
+AH_DEFINE_ASSOCIATIVE_ENUM(function_type, function_type_to_string, AH_FUNCTION_TYPE);
+typedef enum function_type function_type;
 
 #define AH_NODE_TYPE(_) \
         _(NT_NOTYPE) \
@@ -43,6 +58,13 @@ typedef enum value_type value_type;
         _(NT_OR) \
         _(NT_NOT) \
         _(NT_IF) \
+        _(NT_MAP) \
+        _(NT_FOLDL) \
+        _(NT_FOLDR) \
+        _(NT_FILTER) \
+        _(NT_HEAD) \
+        _(NT_TAIL) \
+        _(NT_REVERSE) \
         _(NT__END) \
 
 AH_DEFINE_ASSOCIATIVE_ENUM(node_type, node_type_to_string, AH_NODE_TYPE);
@@ -73,29 +95,40 @@ ast *new_bool(bool);
 ast *new_asgn(char*, ast*);
 ast *new_func(ast*, ast*);
 ast *new_env(ast*);
-ast *new_call(ast*, ast*);
+ast *new_list(ast*);
+ast *new_apply(ast*, ast*);
 ast *new_if(ast*, ast*, ast*);
+ast *new_builtin(node_type);
 
 void free_ast(ast**);
 
 void yyerror(ast**, char const*);
 int parse_string(char*, ast**);
 
+typedef struct value_list_ value_list;
+typedef struct value_ value;
 typedef struct symbol_ symbol;
 typedef struct symtab_ symtab;
 typedef struct node_function_ node_function;
 
-typedef struct {
+struct value_list_ {
+	value *element;
+	list_head siblings;
+};
+
+struct value_ {
 	value_type type;
 	union {
 		bool b;
 		double n;
 		struct {
-			symtab *env;
+			function_type type;
 			node_function *node;
+			symtab *env;
 		} f;
+		value_list *l;
 	} value;
-} value;
+};
 
 #define NHASH 9973
 
@@ -150,13 +183,6 @@ struct node_function_ {
 	list_head *children;
 	list_head *args;
 };
-
-/* type NT_ENV */
-typedef struct {
-	node_type type;
-	list_head siblings;
-	list_head *children;
-} node_env;
 
 /* type NT_IF */
 typedef struct {

@@ -10,13 +10,143 @@
 
 #define VERSION "0.1.0"
 
+void build_environment(symtab*, symtab*, symtab*, ast*);
+symtab *get_environment(symtab*, const node_function *const);
+
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
 void eval_n_n_n(ast*, ast*, symtab*, value*, node_type);
 void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
+void eval_apply(ast*, symtab*, value*);
 void eval(ast*, symtab*, value*);
 
-void build_environment(symtab*, symtab*, symtab*, ast*);
-symtab *get_environment(symtab*, const node_function *const);
+void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env, ast *a) {
+	AH_NODE_INFO(a);
+	ast *p;
+	switch (a->type) { // TODO use enum range macro to identify terminal and nonterminal (ie w/children) nodes
+		case NT_IDENTIFIER: {
+			if (!sym_lookup(local_symtab, ((node_identifier *)a)->i)) {
+				AH_PRINT(CYAN ">>> FREE VARIABLE: %s\n" RESET, ((node_identifier *)a)->i);
+				value res;
+				get_value(sym_lookup(parent_symtab, ((node_identifier *)a)->i), &res);
+				if (res.type == VT_NOTHING) {
+					printf(RED "Free variable \"%s\" was not previously declared.\n" RESET, ((node_identifier *)a)->i);
+				} else {
+					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
+					if (res.type == VT_FUNCTION && res.value.f.type == FT_NEW) {
+						build_environment(parent_symtab, local_symtab, env, (ast *)res.value.f.node);
+					} 
+					set_value(sym_add(env, ((node_identifier *)a)->i), &res);
+				}
+			} else {
+				AH_PRINT(">>> BINDED VARIABLE (nothing to do): %s\n", ((node_identifier *)a)->i);
+			}
+			break;
+		}
+		case NT_NUMERIC:
+		case NT_BOOLEAN:
+			// Terminals
+			break;
+		case NT_ASSIGNMENT:
+			sym_add(local_symtab, ((node_assignment *)a)->i);
+			break;
+		case NT_FUNCTION: {
+			node_identifier *i;
+			list_for_each_entry(i, ((node_function *)a)->args, siblings) {
+				AH_PRINT(" args [%p]: %s\n", i, i->i);
+				sym_add(local_symtab, i->i);
+			}
+		}
+		case NT_ENV: {
+			symtab *inner_symtab = new_symtab(local_symtab);
+			list_for_each_entry(p, a->children, siblings) {
+				AH_PRINT("building --> %s\n", node_type_to_string[p->type]);
+				build_environment(parent_symtab, inner_symtab, env, p);
+			}
+			free_symtab(inner_symtab);
+		}
+			break;
+		case NT_APPLY: {
+			ast *p;
+			list_for_each_entry(p, ast_left(a)->children, siblings) {
+				AH_PRINT("~~~~~~~~~~~> args [%p]: %s\n", p, node_type_to_string[p->type]);
+				build_environment(parent_symtab, local_symtab, env, p);
+			}
+
+			symtab *inner_symtab = new_symtab(local_symtab);
+			AH_NODE_INFO(ast_right(a));
+			build_environment(parent_symtab, inner_symtab, env, ast_right(a));
+			free_symtab(inner_symtab);
+			break;
+		}
+		case NT_LIST:
+		case NT_ADDITION:
+		case NT_SUBTRACTION:
+		case NT_MULTIPLICATION:
+		case NT_DIVISION:
+		case NT_EXPONENTIATION:
+		case NT_ROOT:
+		case NT_NEGATIVE:
+		case NT_EQUAL:
+		case NT_NOTEQUAL:
+		case NT_LESS:
+		case NT_LESSEQUAL:
+		case NT_GREATER:
+		case NT_GREATEREQUAL:
+		case NT_AND:
+		case NT_OR:
+		case NT_NOT:
+			list_for_each_entry(p, a->children, siblings) {
+				AH_PRINT("building --> %s\n", node_type_to_string[p->type]);
+				build_environment(parent_symtab, local_symtab, env, p);
+			}
+			break;
+		case NT_IF:
+			AH_PRINT("building --> if_expr\n");
+			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->expr);
+			AH_PRINT("building --> if_true\n");
+			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->t);
+			AH_PRINT("building --> if_false\n");
+			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->f);
+			break;
+		default:
+			printf(RED "FATAL ERROR: %s: unknown value type: %i (%s)\n" RESET,
+			       __func__,
+			       a->type,
+			       node_type_to_string[a->type]);
+			exit(EXIT_FAILURE);
+	}
+}
+
+symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
+	AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
+
+	symtab *tmp_symtab = new_symtab(NULL); // XXX To avoid lookup on outer scopes
+	symtab *env = new_symtab(NULL); // XXX To avoid lookup on outer scopes
+
+	node_identifier *i;
+	list_for_each_entry(i, fun->args, siblings) {
+		AH_PRINT(" args [%p]: %s\n", i, i->i);
+		sym_add(tmp_symtab, i->i);
+	}
+
+	ast *p;
+	list_for_each_entry(p, ((node_function *)fun)->children, siblings) {
+		AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
+		build_environment(parent_symtab, tmp_symtab, env, p);
+	}
+
+	free_symtab(tmp_symtab);
+	if (!env->count) {
+		AH_PRINT("Temp environment unused, freeing...\n");
+		free_symtab(env);
+		env = NULL;
+	}
+
+	if (env) AH_PRINT(BLUE "=== (returning closure) ========\n" RESET);
+	else     AH_PRINT(BLUE "=== (returning nothing) ========\n" RESET);
+
+	return env;
+}
 
 // binary operations: numerical -> numerical -> numerical
 void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
@@ -154,156 +284,109 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	}
 }
 
-void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env, ast *a) {
-	AH_NODE_INFO(a);
-	ast *p;
-	switch (a->type) { // TODO use enum range macro to identify terminal and nonterminal (ie w/children) nodes
-		case NT_IDENTIFIER: {
-			if (!sym_lookup(local_symtab, ((node_identifier *)a)->i)) {
-				AH_PRINT(CYAN ">>> FREE VARIABLE: %s\n" RESET, ((node_identifier *)a)->i);
-				value res;
-				get_value(sym_lookup(parent_symtab, ((node_identifier *)a)->i), &res);
-				if (res.type == VT_NOTHING) {
-					printf(RED "Free variable \"%s\" was not previously declared.\n" RESET, ((node_identifier *)a)->i);
-				} else {
-					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
-					if (res.type == VT_FUNCTION) {
-						build_environment(parent_symtab, local_symtab, env, (ast *)res.value.f.node);
-					} 
-					set_value(sym_add(env, ((node_identifier *)a)->i), &res);
-				}
-			} else {
-				AH_PRINT(">>> BINDED VARIABLE (nothing to do): %s\n", ((node_identifier *)a)->i);
-			}
-			break;
-		}
-		case NT_NUMERIC:
-		case NT_BOOLEAN:
-			// Terminals
-			break;
-		case NT_ASSIGNMENT:
-			sym_add(local_symtab, ((node_assignment *)a)->i);
-			break;
-		case NT_FUNCTION: {
-			node_identifier *i;
-			list_for_each_entry(i, ((node_function *)a)->args, siblings) {
-				AH_PRINT(" args [%p]: %s\n", i, i->i);
-				sym_add(local_symtab, i->i);
-			}
-		}
-		case NT_ENV: {
-			symtab *inner_symtab = new_symtab(local_symtab);
-			list_for_each_entry(p, a->children, siblings) {
-				AH_PRINT("building --> %s\n", node_type_to_string[p->type]);
-				build_environment(parent_symtab, inner_symtab, env, p);
-			}
-			free_symtab(inner_symtab);
-		}
-			break;
-		case NT_APPLY: {
-			ast *p;
-			list_for_each_entry(p, ast_left(a)->children, siblings) {
-				AH_PRINT("~~~~~~~~~~~> args [%p]: %s\n", p, node_type_to_string[p->type]);
-				build_environment(parent_symtab, local_symtab, env, p);
-			}
-
-			symtab *inner_symtab = new_symtab(local_symtab);
-			AH_NODE_INFO(ast_right(a));
-			build_environment(parent_symtab, inner_symtab, env, ast_right(a));
-			free_symtab(inner_symtab);
-			break;
-		}
-		case NT_LIST:
-		case NT_ADDITION:
-		case NT_SUBTRACTION:
-		case NT_MULTIPLICATION:
-		case NT_DIVISION:
-		case NT_EXPONENTIATION:
-		case NT_ROOT:
-		case NT_NEGATIVE:
-		case NT_EQUAL:
-		case NT_NOTEQUAL:
-		case NT_LESS:
-		case NT_LESSEQUAL:
-		case NT_GREATER:
-		case NT_GREATEREQUAL:
-		case NT_AND:
-		case NT_OR:
-		case NT_NOT:
-			list_for_each_entry(p, a->children, siblings) {
-				AH_PRINT("building --> %s\n", node_type_to_string[p->type]);
-				build_environment(parent_symtab, local_symtab, env, p);
-			}
-			break;
-		case NT_IF:
-			AH_PRINT("building --> if_expr\n");
-			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->expr);
-			AH_PRINT("building --> if_true\n");
-			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->t);
-			AH_PRINT("building --> if_false\n");
-			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->f);
-			break;
-		default:
-			printf(RED "FATAL ERROR: %s: unknown value type: %i (%s)\n" RESET,
-			       __func__,
-			       a->type,
-			       node_type_to_string[a->type]);
-			exit(EXIT_FAILURE);
-	}
-}
-
-symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
-	AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
-
-	symtab *tmp_symtab = new_symtab(NULL); // XXX To avoid lookup on outer scopes
-	symtab *env = new_symtab(NULL); // XXX To avoid lookup on outer scopes
-
-	node_identifier *i;
-	list_for_each_entry(i, fun->args, siblings) {
-		AH_PRINT(" args [%p]: %s\n", i, i->i);
-		sym_add(tmp_symtab, i->i);
-	}
-
-	ast *p;
-	list_for_each_entry(p, ((node_function *)fun)->children, siblings) {
-		AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
-		build_environment(parent_symtab, tmp_symtab, env, p);
-	}
-
-	free_symtab(tmp_symtab);
-	if (!env->count) {
-		AH_PRINT("Temp environment unused, freeing...\n");
-		free_symtab(env);
-		env = NULL;
-	}
-
-	if (env) AH_PRINT(BLUE "=== (returning closure) ========\n" RESET);
-	else     AH_PRINT(BLUE "=== (returning nothing) ========\n" RESET);
-
-	return env;
-}
-
 void eval_apply(ast *a, symtab *st, value *res) {
 	ast *param_list = ast_left(a);
-	node_function *fun;
-	symtab *local_symtab;
 
 	eval(ast_right(a), st, res);
 	if (res->type == VT_NOTHING)
 		return;
 
-	if (res->type == VT_FUNCTION) {
-		fun = (node_function*)res->value.f.node;
-		if (res->value.f.env) {
-			local_symtab = new_symtab(res->value.f.env);
-			local_symtab->parent->parent = st; // XXX do not modify closure env
-		} else {
-			local_symtab = new_symtab(st);
-		}
-	} else {
+	if (res->type != VT_FUNCTION) {
 		yyerror(NULL, RED "TYPE ERROR: " RESET "LHS operand is not a function.");
 		res->type = VT_NOTHING;
 		return;
+	}
+
+	// Built-in functions:
+	if (res->value.f.type != FT_NEW) {
+		switch (res->value.f.type) {
+			case FT_HEAD: {
+				eval(list_entry(param_list->children, ast, siblings), st, res);
+				if (res->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: reverse argument is not a list.");
+					res->type = VT_NOTHING;
+					break;
+				}
+				res->type = (res->value.l)->element->type;
+				res->value = (res->value.l)->element->value;
+				break;
+			}
+			case FT_TAIL: {
+				value *res_tmp = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				if (res_tmp->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: reverse argument is not a list.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				res->value.l = NULL;
+
+				value_list *l;
+				value_list *l_new;
+				list_for_each_entry(l, &(res_tmp->value.l)->siblings, siblings) {
+					if (l == res_tmp->value.l)
+						continue;
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = l->element; // XXX
+
+					if (res->value.l)
+						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
+				}
+				res->type = VT_LIST;
+				free(res_tmp);
+				break;
+			}
+			case FT_REVERSE: {
+				value *res_tmp = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				if (res_tmp->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: reverse argument is not a list.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				res->value.l = NULL;
+
+				value_list *l;
+				value_list *l_new;
+				list_for_each_entry(l, &(res_tmp->value.l)->siblings, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = l->element; // XXX
+
+					if (res->value.l)
+						list_add(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
+				}
+				res->type = VT_LIST;
+				res->value.l = l_new;
+				free(res_tmp);
+				break;
+			}
+			default:
+				yyerror(NULL, "Unimplemented function type.");
+				res->type = VT_NOTHING;
+		}
+		return;
+	}
+
+	node_function *fun = (node_function*)res->value.f.node;
+	symtab *local_symtab;
+
+	if (res->value.f.env) {
+		local_symtab = new_symtab(res->value.f.env);
+		local_symtab->parent->parent = st; // XXX do not modify closure env
+	} else {
+		local_symtab = new_symtab(st);
 	}
 
 	ast *p;
@@ -311,7 +394,7 @@ void eval_apply(ast *a, symtab *st, value *res) {
 	node_identifier *i;
 	p = list_entry(param_list->children, ast, siblings);
 	list_for_each_entry(i, fun->args, siblings) {
-		eval((ast *)p, st, res);
+		eval(p, st, res);
 		if (res->type == VT_NOTHING)
 			goto failure;
 		set_value(sym_add(local_symtab, ((node_identifier*)i)->i), res);
@@ -319,7 +402,7 @@ void eval_apply(ast *a, symtab *st, value *res) {
 	}
 
 	list_for_each_entry(p, fun->children, siblings) {
-		eval((ast *)p, local_symtab, res);
+		eval(p, local_symtab, res);
 		if (res->type == VT_NOTHING)
 			goto failure;
 	}
@@ -416,7 +499,7 @@ void eval(ast *a, symtab *st, value *res) {
 				ast *p;
 				list_for_each_entry(p, a->children, siblings) {
 					eval(p, local_symtab, res);
-					if (res->type == VT_FUNCTION && !res->value.f.env) {
+					if (res->type == VT_FUNCTION && res->value.f.type == FT_NEW && !res->value.f.env) {
 						res->value.f.env = get_environment(local_symtab, res->value.f.node);
 					}
 				}
@@ -432,12 +515,56 @@ void eval(ast *a, symtab *st, value *res) {
 					AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
 				}
 				res->type = VT_FUNCTION;
+				res->value.f.type = FT_NEW;
 				res->value.f.node = (node_function *)a;
 				res->value.f.env = get_environment(st, res->value.f.node);
 				break;
 			}
-			case NT_APPLY: {
+			case NT_APPLY:
 				eval_apply(a, st, res);
+				break;
+			case NT_LIST: {
+				value *e;
+				value_list *l;
+
+				res->type = VT_LIST;
+				res->value.l = NULL;
+
+				if (!a->children) {
+					break;
+				}
+
+				ast *p;
+				list_for_each_entry(p, a->children, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", p, node_type_to_string[p->type]);
+
+					e = malloc(sizeof(value));
+					eval(list_entry(&p->siblings, ast, siblings), st, e);
+					//if e!=nothing // TODO
+					l = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l->siblings);
+					l->element = e;
+
+					if (res->value.l)
+						list_add_tail(&l->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l;
+				}
+				break;
+			}
+			case NT_HEAD: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_HEAD;
+				break;
+			}
+			case NT_TAIL: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_TAIL;
+				break;
+			}
+			case NT_REVERSE: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_REVERSE;
 				break;
 			}
 			default:
@@ -489,6 +616,15 @@ int main(int argc, char **argv) {
 				case VT_FUNCTION:
 					printf("==> function [%p] %s\n", res.value.f.node, res.value.f.env ? "(closure)" : "");
 					break;
+				case VT_LIST: {
+					printf("==> list [%p] {", res.value.l);
+					value_list *p;
+					list_for_each_entry(p, &(res.value.l)->siblings, siblings) {
+						printf(" %s[%p]", value_type_to_string[p->element->type], p);
+					}
+					printf(" }\n");
+					break;
+				}
 				case VT_NOTHING:
 					break;
 				default:

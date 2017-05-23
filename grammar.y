@@ -18,7 +18,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 	bool b;
 }
 
-%type <a> prog expr_list maybe_expr expr lit env params_high params_low args
+%type <a> prog expr_list maybe_expr expr lit env list params_high params_low args built_in
 
 %token EOL
 %token EXP
@@ -37,10 +37,13 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token IF
 %token COND
 %token CASE
-%token FIX
 %token MAP
-%token FOLD
+%token FOLDL
+%token FOLDR
 %token FILTER
+%token HEAD
+%token TAIL
+%token REVERSE
 
 %token <s> IDENT
 %token <d> NUMBER
@@ -84,6 +87,8 @@ maybe_expr
 
 expr
 : lit
+| env
+| list { $$ = new_list($1); }
 | IDENT { $$ = new_ident($1); }
 | IDENT ':' expr { $$ = new_asgn($1, $3); }
 | expr '+' expr { $$ = new_ast(NT_ADDITION, $1, $3); }
@@ -103,11 +108,11 @@ expr
 | expr OR expr { $$ = new_ast(NT_OR, $1, $3); }
 | NOT expr { $$ = new_ast(NT_NOT, $2); }
 | '(' expr ')' { $$ = $2; }
-| env
 | '[' args '|' expr_list ']' { $$ = new_func($2, $4); }
-| expr '{' params_low '}' { $$ = new_call($1, $3); }
-| expr '@' params_high { $$ = new_call($1, $3); }
+| expr list { $$ = new_apply($1, $2); }
+| expr '@' params_high { $$ = new_apply($1, $3); }
 | IF expr env env { $$ = new_if($2, $3, $4); }
+| built_in
 ;
 
 lit
@@ -118,6 +123,10 @@ lit
 
 env
 : '[' expr_list ']' { $$ = new_env($2); }
+;
+
+list
+: '{' params_low '}' { $$ = $2; }
 ;
 
 params_low
@@ -134,6 +143,15 @@ args
 : IDENT { $$ = new_ident($1); }
 | args ',' IDENT { if ($1 && $3) list_add_tail(&new_ident($3)->siblings, &$1->siblings); }
 ;
+
+built_in
+: MAP { $$ = new_builtin(NT_MAP); }
+| FOLDL { $$ = new_builtin(NT_FOLDL); }
+| FOLDR { $$ = new_builtin(NT_FOLDR); }
+| FILTER { $$ = new_builtin(NT_FILTER); }
+| HEAD { $$ = new_builtin(NT_HEAD); }
+| TAIL { $$ = new_builtin(NT_TAIL); }
+| REVERSE { $$ = new_builtin(NT_REVERSE); }
 
 %%
 

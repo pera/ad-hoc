@@ -19,7 +19,7 @@ ast *new_ast(node_type type, ...) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = type;
@@ -43,7 +43,7 @@ ast *new_ident(char *i) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_IDENTIFIER;
@@ -59,7 +59,7 @@ ast *new_num(double d) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_NUMERIC;
@@ -75,7 +75,7 @@ ast *new_bool(bool b) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_BOOLEAN;
@@ -91,7 +91,7 @@ ast *new_asgn(char *i, ast *v) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_ASSIGNMENT;
@@ -107,7 +107,7 @@ ast *new_func(ast *args, ast *expr_list) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_FUNCTION;
@@ -125,7 +125,7 @@ ast *new_env(ast *expr_list) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_ENV;
@@ -136,13 +136,30 @@ ast *new_env(ast *expr_list) {
 	return (ast *)a;
 }
 
-ast *new_call(ast *func, ast *param_list) {
+ast *new_list(ast *list) {
+	node_function *a = malloc(sizeof(node_function));
+	INIT_LIST_HEAD(&a->siblings);
+
+	if(!a) {
+		yyerror(NULL, "out of space");
+		exit(EXIT_FAILURE);
+	}
+
+	a->type = NT_LIST;
+	a->children = &list->siblings;
+
+	AH_PRINT("\t(!) new list [%p]: head [%p]\n", a, list);
+
+	return (ast *)a;
+}
+
+ast *new_apply(ast *func, ast *param_list) {
 	ast *a = malloc(sizeof(ast));
 	INIT_LIST_HEAD(&a->siblings);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_APPLY;
@@ -150,7 +167,7 @@ ast *new_call(ast *func, ast *param_list) {
 	a->children = &new_ast(NT_LIST, param_list)->siblings;
 	list_add_tail(&func->siblings, a->children);
 
-	AH_PRINT("\t(!) new call [%p]\n", a);
+	AH_PRINT("\t(!) new apply [%p]\n", a);
 
 	return a;
 }
@@ -161,7 +178,7 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 
 	if(!a) {
 		yyerror(NULL, "out of space");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	a->type = NT_IF;
@@ -173,6 +190,34 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 	AH_PRINT("\t(!) new if [%p]\n", a);
 
 	return (ast *)a;
+}
+
+ast *new_builtin(node_type type) {
+	ast *a = malloc(sizeof(ast));
+	INIT_LIST_HEAD(&a->siblings);
+
+	if(!a) {
+		yyerror(NULL, "out of space");
+		exit(EXIT_FAILURE);
+	}
+
+	switch (type) {
+		case NT_MAP:
+		case NT_FOLDL:
+		case NT_FOLDR:
+		case NT_FILTER:
+		case NT_HEAD:
+		case NT_TAIL:
+		case NT_REVERSE:
+			a->type = type;
+			a->children = NULL;
+			break;
+		default:
+			yyerror(NULL, "Unknown built-in function type");
+			exit(EXIT_FAILURE);
+	}
+
+	return a;
 }
 
 void free_ast(ast **a) {

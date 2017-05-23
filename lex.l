@@ -19,6 +19,9 @@
 "["         { return '['; }
 "]"         { return ']'; }
 "|"         { return '|'; }
+"{"         { return '{'; }
+"}"         { return '}'; }
+"@"         { return '@'; }
  /* mathematical operators */
 "+"         { return '+'; }
 "-"         { return '-'; }
@@ -38,10 +41,6 @@
 "and"       { return AND; }
 "or"        { return OR; }
 "not"       { return NOT; }
- /* function application */
-"{"         { return '{'; }
-"}"         { return '}'; }
-"@"         { return '@'; }
  /* lazy evaluation */
 "$"         { return DELAY; }
 "!"         { return FORCE; }
@@ -50,14 +49,18 @@
 "cond"      { return COND; }
 "case"      { return CASE; }
  /* higher-order functions */
-"fix"       { return FIX; }
 "map"       { return MAP; }
-"fold"      { return FOLD; }
+"foldl"     { return FOLDL; }
+"foldr"     { return FOLDR; }
 "filter"    { return FILTER; }
+ /* lists */
+"head"      { return HEAD; }
+"tail"      { return TAIL; }
+"reverse"   { return REVERSE; }
  /* literals */
 "true"                  { return TRUE; }
 "false"                 { return FALSE; }
-[a-zA-Z][a-zA-Z_0-9]*   { yylval.s = strdup(yytext); return IDENT; }
+[a-zA-Z_][a-zA-Z_0-9]*  { yylval.s = strdup(yytext); return IDENT; }
 [0-9]+(\.[0-9]+)?       { yylval.d = atof(yytext); return NUMBER; }
 
  /* whitespace */
