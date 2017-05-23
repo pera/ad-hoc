@@ -57,6 +57,7 @@
 "head"      { return HEAD; }
 "tail"      { return TAIL; }
 "reverse"   { return REVERSE; }
+"append"    { return APPEND; }
  /* literals */
 "true"                  { return TRUE; }
 "false"                 { return FALSE; }

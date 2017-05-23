@@ -44,6 +44,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token HEAD
 %token TAIL
 %token REVERSE
+%token APPEND
 
 %token <s> IDENT
 %token <d> NUMBER
@@ -152,6 +153,7 @@ built_in
 | HEAD { $$ = new_builtin(NT_HEAD); }
 | TAIL { $$ = new_builtin(NT_TAIL); }
 | REVERSE { $$ = new_builtin(NT_REVERSE); }
+| APPEND { $$ = new_builtin(NT_APPEND); }
 
 %%
 

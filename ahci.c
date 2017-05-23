@@ -372,6 +372,54 @@ void eval_apply(ast *a, symtab *st, value *res) {
 				free(res_tmp);
 				break;
 			}
+			case FT_APPEND: {
+				value *res_a1 = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				if (res_a1->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				value *res_a2 = malloc(sizeof(value));
+				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				if (res_a2->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					free(res_a1);
+					break;
+				}
+
+				res->value.l = NULL;
+
+				value_list *l;
+				value_list *l_new;
+				list_for_each_entry(l, &(res_a1->value.l)->siblings, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = l->element; // XXX
+
+					if (res->value.l)
+						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
+				}
+				list_for_each_entry(l, &(res_a2->value.l)->siblings, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = l->element; // XXX
+
+					list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+				}
+				res->type = VT_LIST;
+				free(res_a1);
+				free(res_a2);
+				break;
+			}
 			default:
 				yyerror(NULL, "Unimplemented function type.");
 				res->type = VT_NOTHING;
@@ -565,6 +613,11 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_REVERSE: {
 				res->type = VT_FUNCTION;
 				res->value.f.type = FT_REVERSE;
+				break;
+			}
+			case NT_APPEND: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_APPEND;
 				break;
 			}
 			default:

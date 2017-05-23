@@ -25,6 +25,7 @@ typedef enum value_type value_type;
         _(FT_HEAD) \
         _(FT_TAIL) \
         _(FT_REVERSE) \
+        _(FT_APPEND) \
         _(FT__END) \
 
 AH_DEFINE_ASSOCIATIVE_ENUM(function_type, function_type_to_string, AH_FUNCTION_TYPE);
@@ -65,6 +66,7 @@ typedef enum function_type function_type;
         _(NT_HEAD) \
         _(NT_TAIL) \
         _(NT_REVERSE) \
+        _(NT_APPEND) \
         _(NT__END) \
 
 AH_DEFINE_ASSOCIATIVE_ENUM(node_type, node_type_to_string, AH_NODE_TYPE);

@@ -209,6 +209,7 @@ ast *new_builtin(node_type type) {
 		case NT_HEAD:
 		case NT_TAIL:
 		case NT_REVERSE:
+		case NT_APPEND:
 			a->type = type;
 			a->children = NULL;
 			break;
