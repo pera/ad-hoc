@@ -146,7 +146,7 @@ ast *new_list(ast *list) {
 	}
 
 	a->type = NT_LIST;
-	a->children = &list->siblings;
+	a->children = list ? &list->siblings : NULL;
 
 	AH_PRINT("\t(!) new list [%p]: head [%p]\n", a, list);
 
@@ -154,6 +154,10 @@ ast *new_list(ast *list) {
 }
 
 ast *new_apply(ast *func, ast *param_list) {
+	if (!param_list) {
+		yyerror(NULL, "empty args call not supported.");
+		exit(EXIT_FAILURE);
+	}
 	ast *a = malloc(sizeof(ast));
 	INIT_LIST_HEAD(&a->siblings);
 
@@ -164,8 +168,12 @@ ast *new_apply(ast *func, ast *param_list) {
 
 	a->type = NT_APPLY;
 
-	a->children = &new_ast(NT_LIST, param_list)->siblings;
-	list_add_tail(&func->siblings, a->children);
+	if (param_list) {
+		a->children = &new_ast(NT_LIST, param_list)->siblings;
+		list_add_tail(&func->siblings, a->children);
+	} else {
+		a->children = NULL;
+	}
 
 	AH_PRINT("\t(!) new apply [%p]\n", a);
 
@@ -210,6 +218,7 @@ ast *new_builtin(node_type type) {
 		case NT_TAIL:
 		case NT_REVERSE:
 		case NT_APPEND:
+		case NT_LENGTH:
 			a->type = type;
 			a->children = NULL;
 			break;

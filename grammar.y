@@ -45,6 +45,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token TAIL
 %token REVERSE
 %token APPEND
+%token LENGTH
 
 %token <s> IDENT
 %token <d> NUMBER
@@ -128,6 +129,7 @@ env
 
 list
 : '{' params_low '}' { $$ = $2; }
+| '{' '}' { $$ = NULL; }
 ;
 
 params_low
@@ -154,6 +156,8 @@ built_in
 | TAIL { $$ = new_builtin(NT_TAIL); }
 | REVERSE { $$ = new_builtin(NT_REVERSE); }
 | APPEND { $$ = new_builtin(NT_APPEND); }
+| LENGTH { $$ = new_builtin(NT_LENGTH); }
+;
 
 %%
 

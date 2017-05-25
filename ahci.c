@@ -55,7 +55,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 				AH_PRINT(" args [%p]: %s\n", i, i->i);
 				sym_add(local_symtab, i->i);
 			}
-		}
+		} // no breaks!
 		case NT_ENV: {
 			symtab *inner_symtab = new_symtab(local_symtab);
 			list_for_each_entry(p, a->children, siblings) {
@@ -63,8 +63,8 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 				build_environment(parent_symtab, inner_symtab, env, p);
 			}
 			free_symtab(inner_symtab);
-		}
 			break;
+		}
 		case NT_APPLY: {
 			ast *p;
 			list_for_each_entry(p, ast_left(a)->children, siblings) {
@@ -107,6 +107,16 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->t);
 			AH_PRINT("building --> if_false\n");
 			build_environment(parent_symtab, local_symtab, env, ((node_if *)a)->f);
+			break;
+        case NT_MAP:
+        case NT_FOLDL:
+        case NT_FOLDR:
+        case NT_FILTER:
+        case NT_HEAD:
+        case NT_TAIL:
+        case NT_REVERSE:
+        case NT_APPEND:
+			// built-in
 			break;
 		default:
 			printf(RED "FATAL ERROR: %s: unknown value type: %i (%s)\n" RESET,
@@ -307,6 +317,11 @@ void eval_apply(ast *a, symtab *st, value *res) {
 					res->type = VT_NOTHING;
 					break;
 				}
+				if (!res->value.l) {
+					yyerror(NULL, "List is empty.");
+					res->type = VT_NOTHING;
+					break;
+				}
 				res->type = (res->value.l)->element->type;
 				res->value = (res->value.l)->element->value;
 				break;
@@ -413,11 +428,32 @@ void eval_apply(ast *a, symtab *st, value *res) {
 					INIT_LIST_HEAD(&l_new->siblings);
 					l_new->element = l->element; // XXX
 
-					list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					if (res->value.l)
+						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
 				}
 				res->type = VT_LIST;
 				free(res_a1);
 				free(res_a2);
+				break;
+			}
+			case FT_LENGTH: {
+				value *res_tmp = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				if (res_tmp->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: reverse argument is not a list.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				int length = 0;
+				value_list *l;
+				list_for_each_entry(l, &(res_tmp->value.l)->siblings, siblings) {
+					length++;
+				}
+				res->type = VT_NUMERIC;
+				res->value.n = length;
 				break;
 			}
 			default:
@@ -618,6 +654,11 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_APPEND: {
 				res->type = VT_FUNCTION;
 				res->value.f.type = FT_APPEND;
+				break;
+			}
+			case NT_LENGTH: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_LENGTH;
 				break;
 			}
 			default:
