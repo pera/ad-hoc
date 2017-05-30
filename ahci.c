@@ -397,7 +397,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 					l_new = malloc(sizeof(value_list));
 					INIT_LIST_HEAD(&l_new->siblings);
 					l_new->element = l->element; // XXX
-					//eval_apply(res_a1, st, res);
+					apply(res_a1, l_new, st, l_new->element);
 
 					if (res->value.l)
 						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
