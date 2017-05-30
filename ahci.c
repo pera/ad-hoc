@@ -16,7 +16,7 @@ symtab *get_environment(symtab*, const node_function *const);
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
 void eval_n_n_n(ast*, ast*, symtab*, value*, node_type);
 void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
-void eval_apply(ast*, symtab*, value*);
+void eval_apply(ast*, ast*, symtab*, value*);
 void eval(ast*, symtab*, value*);
 
 void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env, ast *a) {
@@ -294,10 +294,69 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	}
 }
 
-void eval_apply(ast *a, symtab *st, value *res) {
-	ast *param_list = ast_left(a);
+unsigned long int make_list(ast *a, symtab *st, value *res) {
+	value *e;
+	value_list *l;
 
-	eval(ast_right(a), st, res);
+	res->type = VT_LIST;
+	res->value.l = NULL;
+
+	if (!a->children)
+		return 0;
+
+	int n = 0;
+	ast *p;
+	list_for_each_entry(p, a->children, siblings) {
+		AH_PRINT(" value_list [%p] type: %s\n", p, node_type_to_string[p->type]);
+
+		e = malloc(sizeof(value));
+		eval(list_entry(&p->siblings, ast, siblings), st, e);
+		//if e!=nothing // TODO
+		l = malloc(sizeof(value_list));
+		INIT_LIST_HEAD(&l->siblings);
+		l->element = e;
+
+		if (res->value.l)
+			list_add_tail(&l->siblings, &(res->value.l)->siblings);
+		else
+			res->value.l = l;
+
+		n++;
+	}
+
+	return n;
+}
+
+void apply(value *fun, value_list *args, symtab *st, value *res) {
+	node_function *fun_node = (node_function*)fun->value.f.node;
+	symtab *local_symtab;
+
+	if (fun->value.f.env) {
+		local_symtab = new_symtab(fun->value.f.env);
+		local_symtab->parent->parent = st; // XXX do not modify closure env
+	} else {
+		local_symtab = new_symtab(st);
+	}
+
+	value_list *a = args;
+	node_identifier *i;
+	list_for_each_entry(i, fun_node->args, siblings) {
+		set_value(sym_add(local_symtab, ((node_identifier*)i)->i), a->element);
+		a = list_next_entry(a, siblings);
+	}
+
+	ast *expr;
+	list_for_each_entry(expr, fun_node->children, siblings) {
+		eval(expr, local_symtab, res);
+		if (res->type == VT_NOTHING)
+			break;
+	}
+
+	free_symtab(local_symtab);
+}
+
+void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
+	eval(function, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 
@@ -310,6 +369,46 @@ void eval_apply(ast *a, symtab *st, value *res) {
 	// Built-in functions:
 	if (res->value.f.type != FT_NEW) {
 		switch (res->value.f.type) {
+			case FT_MAP: {
+				value *res_a1 = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				if (res_a1->type != VT_FUNCTION) {
+					yyerror(NULL, "Invalid type: append argument is not a function.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				value *res_a2 = malloc(sizeof(value));
+				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				if (res_a2->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					free(res_a1);
+					break;
+				}
+
+				res->value.l = NULL;
+
+				value_list *l;
+				value_list *l_new;
+				list_for_each_entry(l, &(res_a2->value.l)->siblings, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = l->element; // XXX
+					//eval_apply(res_a1, st, res);
+
+					if (res->value.l)
+						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
+				}
+				res->type = VT_LIST;
+				free(res_a1);
+				free(res_a2);
+				break;
+			}
 			case FT_HEAD: {
 				eval(list_entry(param_list->children, ast, siblings), st, res);
 				if (res->type != VT_LIST) {
@@ -463,36 +562,18 @@ void eval_apply(ast *a, symtab *st, value *res) {
 		return;
 	}
 
-	node_function *fun = (node_function*)res->value.f.node;
-	symtab *local_symtab;
-
-	if (res->value.f.env) {
-		local_symtab = new_symtab(res->value.f.env);
-		local_symtab->parent->parent = st; // XXX do not modify closure env
-	} else {
-		local_symtab = new_symtab(st);
+	value args; // TODO deep free
+	value_list *l;
+	if (!make_list(param_list, st, &args)) {
+		yyerror(NULL, "Empty param_list.");
+		exit(EXIT_FAILURE);
 	}
 
-	ast *p;
-
-	node_identifier *i;
-	p = list_entry(param_list->children, ast, siblings);
-	list_for_each_entry(i, fun->args, siblings) {
-		eval(p, st, res);
-		if (res->type == VT_NOTHING)
-			goto failure;
-		set_value(sym_add(local_symtab, ((node_identifier*)i)->i), res);
-		p = list_next_entry(p,siblings);
+	list_for_each_entry(l, &(args.value.l)->siblings, siblings) {
+		AH_PRINT("ARGS: value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
 	}
 
-	list_for_each_entry(p, fun->children, siblings) {
-		eval(p, local_symtab, res);
-		if (res->type == VT_NOTHING)
-			goto failure;
-	}
-
-failure:
-	free_symtab(local_symtab);
+	apply(res, args.value.l, st, res);
 }
 
 void eval(ast *a, symtab *st, value *res) {
@@ -605,35 +686,14 @@ void eval(ast *a, symtab *st, value *res) {
 				break;
 			}
 			case NT_APPLY:
-				eval_apply(a, st, res);
+				eval_apply(ast_right(a), ast_left(a), st, res);
 				break;
-			case NT_LIST: {
-				value *e;
-				value_list *l;
-
-				res->type = VT_LIST;
-				res->value.l = NULL;
-
-				if (!a->children) {
-					break;
-				}
-
-				ast *p;
-				list_for_each_entry(p, a->children, siblings) {
-					AH_PRINT(" value_list [%p] type: %s\n", p, node_type_to_string[p->type]);
-
-					e = malloc(sizeof(value));
-					eval(list_entry(&p->siblings, ast, siblings), st, e);
-					//if e!=nothing // TODO
-					l = malloc(sizeof(value_list));
-					INIT_LIST_HEAD(&l->siblings);
-					l->element = e;
-
-					if (res->value.l)
-						list_add_tail(&l->siblings, &(res->value.l)->siblings);
-					else
-						res->value.l = l;
-				}
+			case NT_LIST:
+				make_list(a, st, res);
+				break;
+			case NT_MAP: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_MAP;
 				break;
 			}
 			case NT_HEAD: {

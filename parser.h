@@ -109,11 +109,18 @@ void free_ast(ast**);
 void yyerror(ast**, char const*);
 int parse_string(char*, ast**);
 
+typedef struct value_function_ value_function;
 typedef struct value_list_ value_list;
 typedef struct value_ value;
 typedef struct symbol_ symbol;
 typedef struct symtab_ symtab;
 typedef struct node_function_ node_function;
+
+struct value_function_ {
+	function_type type;
+	node_function *node;
+	symtab *env;
+};
 
 struct value_list_ {
 	value *element;
@@ -125,12 +132,8 @@ struct value_ {
 	union {
 		bool b;
 		double n;
-		struct {
-			function_type type;
-			node_function *node;
-			symtab *env;
-		} f;
-		value_list *l;
+		value_function f;
+		value_list *l; // TODO change
 	} value;
 };
 
