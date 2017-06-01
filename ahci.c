@@ -461,6 +461,52 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				free(res_a3);
 				break;
 			}
+			case FT_FILTER: {
+				value *res_a1 = malloc(sizeof(value));
+				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				if (res_a1->type != VT_FUNCTION) {
+					yyerror(NULL, "Invalid type: append argument is not a function.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				value *res_a2 = malloc(sizeof(value));
+				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				if (res_a2->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					free(res_a1);
+					break;
+				}
+
+				res->value.l = NULL;
+
+				value_list param;
+				INIT_LIST_HEAD(&param.siblings);
+				value_list *l;
+				value_list *l_new;
+				value res_tmp;
+				list_for_each_entry(l, &(res_a2->value.l)->siblings, siblings) {
+					AH_PRINT(" value_list [%p] type: %s\n", l, value_type_to_string[l->element->type]);
+
+					param.element = l->element;
+					apply(res_a1, &param, st, &res_tmp);
+					if (res_tmp.type == VT_BOOLEAN && !res_tmp.value.b) // TODO typecheck the function instead
+						continue;
+					l_new = malloc(sizeof(value_list));
+					INIT_LIST_HEAD(&l_new->siblings);
+					l_new->element = param.element; // XXX
+
+					if (res->value.l)
+						list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+					else
+						res->value.l = l_new;
+				}
+				res->type = VT_LIST;
+				free(res_a1);
+				free(res_a2);
+				break;
+			}
 			case FT_HEAD: {
 				eval(list_entry(param_list->children, ast, siblings), st, res);
 				if (res->type != VT_LIST) {
@@ -756,6 +802,11 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_FOLDR: {
 				res->type = VT_FUNCTION;
 				res->value.f.type = FT_FOLDR;
+				break;
+			}
+			case NT_FILTER: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_FILTER;
 				break;
 			}
 			case NT_HEAD: {
