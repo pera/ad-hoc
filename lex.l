@@ -52,6 +52,8 @@
 "map"       { return MAP; }
 "foldl"     { return FOLDL; }
 "foldr"     { return FOLDR; }
+"scanl"     { return SCANL; }
+"scanr"     { return SCANR; }
 "filter"    { return FILTER; }
  /* lists */
 "head"      { return HEAD; }

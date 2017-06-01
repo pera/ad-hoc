@@ -40,6 +40,8 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token MAP
 %token FOLDL
 %token FOLDR
+%token SCANL
+%token SCANR
 %token FILTER
 %token HEAD
 %token TAIL
@@ -151,6 +153,8 @@ built_in
 : MAP { $$ = new_builtin(NT_MAP); }
 | FOLDL { $$ = new_builtin(NT_FOLDL); }
 | FOLDR { $$ = new_builtin(NT_FOLDR); }
+| SCANL { $$ = new_builtin(NT_SCANL); }
+| SCANR { $$ = new_builtin(NT_SCANR); }
 | FILTER { $$ = new_builtin(NT_FILTER); }
 | HEAD { $$ = new_builtin(NT_HEAD); }
 | TAIL { $$ = new_builtin(NT_TAIL); }

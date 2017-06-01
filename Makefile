@@ -57,6 +57,10 @@ test9: CFLAGS += -DAH_DEBUG
 test9: clean ahci
 	@echo "[a|[b|[a|b@a]]@[c|a+c]] {3} {6}" | ./ahci
 
+test10: CFLAGS += -DAH_DEBUG 
+test10: clean ahci
+	@echo "foldl{[a,x|a+x],-2,map@[x|x*2],{1,2,3}}" | ./ahci
+
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci
 	./ahci

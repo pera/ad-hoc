@@ -409,6 +409,58 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				free(res_a2);
 				break;
 			}
+			case FT_FOLDL:
+			case FT_FOLDR: {
+				value *res_a1 = malloc(sizeof(value)); // function
+				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				if (res_a1->type != VT_FUNCTION) {
+					yyerror(NULL, "Invalid type: append argument is not a function.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				value *res_a2 = malloc(sizeof(value)); // accumulator
+				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				if (res_a2->type == VT_NOTHING) {
+					free(res_a1);
+					break;
+				}
+
+				value *res_a3 = malloc(sizeof(value)); // list
+				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
+				if (res_a3->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					free(res_a1);
+					free(res_a2);
+					break;
+				}
+
+				value_list params, param2;
+				INIT_LIST_HEAD(&params.siblings);
+				INIT_LIST_HEAD(&param2.siblings);
+				list_add_tail(&params.siblings, &param2.siblings);
+				value_list *l;
+				if (res->value.f.type == FT_FOLDL) {
+					params.element = res_a2;
+					list_for_each_entry(l, &(res_a3->value.l)->siblings, siblings) {
+						param2.element = l->element; // XXX
+						apply(res_a1, &params, st, res);
+						params.element = res;
+					}
+				} else {
+					param2.element = res_a2;
+					list_for_each_entry_reverse(l, (res_a3->value.l)->siblings.prev, siblings) {
+						params.element = l->element; // XXX
+						apply(res_a1, &params, st, res);
+						param2.element = res;
+					}
+				}
+				free(res_a1);
+				free(res_a2);
+				free(res_a3);
+				break;
+			}
 			case FT_HEAD: {
 				eval(list_entry(param_list->children, ast, siblings), st, res);
 				if (res->type != VT_LIST) {
@@ -694,6 +746,16 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_MAP: {
 				res->type = VT_FUNCTION;
 				res->value.f.type = FT_MAP;
+				break;
+			}
+			case NT_FOLDL: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_FOLDL;
+				break;
+			}
+			case NT_FOLDR: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_FOLDR;
 				break;
 			}
 			case NT_HEAD: {

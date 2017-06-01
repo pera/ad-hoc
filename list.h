@@ -19,6 +19,9 @@ typedef struct list_head {
 #define list_next_entry(pos, member) \
         list_entry((pos)->member.next, typeof(*(pos)), member)
 
+#define list_prev_entry(pos, member) \
+        list_entry((pos)->member.prev, typeof(*(pos)), member)
+
 #define list_for_each(pos, head) \
         for (pos = (head); pos; pos = pos->next != (head) ? pos->next : NULL)
 
@@ -26,6 +29,11 @@ typedef struct list_head {
         for (pos = list_entry(head, typeof(*pos), member); \
              pos; \
              pos = pos->member.next != (head) ? list_next_entry(pos, member) : NULL)
+
+#define list_for_each_entry_reverse(pos, head, member) \
+        for (pos = list_entry(head, typeof(*pos), member); \
+             pos; \
+             pos = pos->member.prev != (head) ? list_prev_entry(pos, member) : NULL)
 
 static inline void INIT_LIST_HEAD(struct list_head *list) {
 	list->next = list;

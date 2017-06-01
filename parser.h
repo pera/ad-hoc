@@ -63,6 +63,8 @@ typedef enum function_type function_type;
         _(NT_MAP) \
         _(NT_FOLDL) \
         _(NT_FOLDR) \
+        _(NT_SCANL) \
+        _(NT_SCANR) \
         _(NT_FILTER) \
         _(NT_HEAD) \
         _(NT_TAIL) \
