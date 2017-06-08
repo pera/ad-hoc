@@ -213,6 +213,8 @@ ast *new_builtin(node_type type) {
 		case NT_MAP:
 		case NT_FOLDL:
 		case NT_FOLDR:
+		case NT_SCANL:
+		case NT_SCANR:
 		case NT_FILTER:
 		case NT_HEAD:
 		case NT_TAIL:

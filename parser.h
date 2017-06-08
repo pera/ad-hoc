@@ -21,6 +21,8 @@ typedef enum value_type value_type;
         _(FT_MAP) \
         _(FT_FOLDL) \
         _(FT_FOLDR) \
+        _(FT_SCANL) \
+        _(FT_SCANR) \
         _(FT_FILTER) \
         _(FT_HEAD) \
         _(FT_TAIL) \

@@ -461,6 +461,78 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				free(res_a3);
 				break;
 			}
+			case FT_SCANL:
+			case FT_SCANR: {
+				value *res_a1 = malloc(sizeof(value)); // function
+				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				if (res_a1->type != VT_FUNCTION) {
+					yyerror(NULL, "Invalid type: append argument is not a function.");
+					res->type = VT_NOTHING;
+					break;
+				}
+
+				value *res_a2 = malloc(sizeof(value)); // accumulator
+				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				if (res_a2->type == VT_NOTHING) {
+					free(res_a1);
+					break;
+				}
+
+				value *res_a3 = malloc(sizeof(value)); // list
+				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
+				if (res_a3->type != VT_LIST) {
+					yyerror(NULL, "Invalid type: append argument is not a list.");
+					res->type = VT_NOTHING;
+					free(res_a1);
+					free(res_a2);
+					break;
+				}
+
+				value_list params, param2;
+				INIT_LIST_HEAD(&params.siblings);
+				INIT_LIST_HEAD(&param2.siblings);
+				list_add_tail(&params.siblings, &param2.siblings);
+				value_list *l;
+				value_list *l_new;
+				if (res->value.f.type == FT_SCANL) {
+					res->value.l = NULL;
+					params.element = res_a2;
+					list_for_each_entry(l, &(res_a3->value.l)->siblings, siblings) {
+						param2.element = l->element; // XXX
+						l_new = malloc(sizeof(value_list));
+						l_new->element = malloc(sizeof(value));
+						INIT_LIST_HEAD(&l_new->siblings);
+						apply(res_a1, &params, st, l_new->element);
+						params.element = l_new->element;
+
+						if (res->value.l)
+							list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+						else
+							res->value.l = l_new;
+					}
+				} else {
+					res->value.l = NULL;
+					param2.element = res_a2;
+					list_for_each_entry_reverse(l, (res_a3->value.l)->siblings.prev, siblings) {
+						params.element = l->element; // XXX
+						l_new = malloc(sizeof(value_list));
+						l_new->element = malloc(sizeof(value));
+						INIT_LIST_HEAD(&l_new->siblings);
+						apply(res_a1, &params, st, l_new->element);
+						param2.element = l_new->element;
+
+						if (res->value.l)
+							list_add_tail(&l_new->siblings, &(res->value.l)->siblings);
+						else
+							res->value.l = l_new;
+					}
+				}
+				res->type = VT_LIST;
+				free(res_a1);
+				free(res_a2);
+				free(res_a3);
+				break;
+			}
 			case FT_FILTER: {
 				value *res_a1 = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
@@ -802,6 +874,16 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_FOLDR: {
 				res->type = VT_FUNCTION;
 				res->value.f.type = FT_FOLDR;
+				break;
+			}
+			case NT_SCANL: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_SCANL;
+				break;
+			}
+			case NT_SCANR: {
+				res->type = VT_FUNCTION;
+				res->value.f.type = FT_SCANR;
 				break;
 			}
 			case NT_FILTER: {
