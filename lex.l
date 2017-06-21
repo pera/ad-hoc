@@ -12,7 +12,7 @@
 
 ";"         { return ';'; }
 ","         { return ','; }
-":"         { return ':'; }
+":="        { return ASGN; }
 "("         { return '('; }
 ")"         { return ')'; }
  /* lambda abstraction term */
@@ -64,7 +64,7 @@
  /* literals */
 "true"                  { return TRUE; }
 "false"                 { return FALSE; }
-[a-zA-Z_][a-zA-Z_0-9]*  { yylval.s = strdup(yytext); return IDENT; }
+[a-zA-Z_][a-zA-Z_0-9']* { yylval.s = strdup(yytext); return IDENT; }
 [0-9]+(\.[0-9]+)?       { yylval.d = atof(yytext); return NUMBER; }
 
  /* whitespace */

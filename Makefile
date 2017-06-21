@@ -23,7 +23,7 @@ ahci: ahci.c lex.yy.c parser.o symtab.o
 
 test1: CFLAGS += -DAH_DEBUG 
 test1: clean ahci
-	@echo "a:4*(1-3);b:a*-1;b*b; ([x,y,z|x+y+z]@2,3,4)-8" | ./ahci
+	@echo "a:=4*(1-3);b:=a*-1;b*b; ([x,y,z|x+y+z]@2,3,4)-8" | ./ahci
 
 test2: CFLAGS += -DAH_DEBUG 
 test2: clean ahci
@@ -31,11 +31,11 @@ test2: clean ahci
 
 test3: CFLAGS += -DAH_DEBUG 
 test3: clean ahci
-	@echo "a:1; [x,y,z|x+y+z]{a,a+1,4} - 4" | ./ahci
+	@echo "a:=1; [x,y,z|x+y+z]{a,a+1,4} - 4" | ./ahci
 
 test4: CFLAGS += -DAH_DEBUG 
 test4: clean ahci
-	@echo "a:7; ([n|a*n]@191)-1333" | ./ahci
+	@echo "a:=7; ([n|a*n]@191)-1333" | ./ahci
 
 test5: CFLAGS += -DAH_DEBUG 
 test5: clean ahci

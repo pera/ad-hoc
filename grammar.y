@@ -21,6 +21,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %type <a> prog expr_list maybe_expr expr lit env list params_high params_low args built_in
 
 %token EOL
+%token ASGN
 %token EXP
 %token ROOT
 %token LOG
@@ -54,7 +55,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token <b> TRUE
 %token <b> FALSE
 
-%precedence ':'
+%precedence ASGN
 %left AND OR NOT
 %left '=' NE
 %left '<' LE '>' GE
@@ -94,7 +95,7 @@ expr
 | env
 | list { $$ = new_list($1); }
 | IDENT { $$ = new_ident($1); }
-| IDENT ':' expr { $$ = new_asgn($1, $3); }
+| IDENT ASGN expr { $$ = new_asgn($1, $3); }
 | expr '+' expr { $$ = new_ast(NT_ADDITION, $1, $3); }
 | expr '-' expr { $$ = new_ast(NT_SUBTRACTION, $1, $3); }
 | expr '*' expr { $$ = new_ast(NT_MULTIPLICATION, $1, $3); }
