@@ -926,6 +926,39 @@ void eval(ast *a, symtab *st, value *res) {
 	}
 }
 
+void print_value(value *v) {
+	void print_value_(value *v) {
+		switch (v->type) {
+			case VT_BOOLEAN:
+				printf("%s", v->value.b ? "true" : "false");
+				break;
+			case VT_NUMERIC:
+				printf("%f", v->value.n);
+				break;
+			case VT_FUNCTION:
+				printf("function [%p] %s", v->value.f.node, v->value.f.env ? "(closure)" : "");
+				break;
+			case VT_LIST: {
+				printf("{ ");
+				value_list *p;
+				list_for_each_entry(p, &(v->value.l)->siblings, siblings) {
+					print_value_(p->element);
+					printf(" ");
+				}
+				printf("}");
+				break;
+			}
+			case VT_NOTHING:
+				break;
+			default:
+				AH_PRINTX("unknown value type\n");
+		}
+	}
+	printf("==> ");
+	print_value_(v);
+	printf("\n");
+}
+
 int main(int argc, char **argv) {
 	char* input;
 	char prompt[] = "\001" MAGENTA "\002" "\xCE\xBB " "\001" RESET "\002";
@@ -955,30 +988,7 @@ int main(int argc, char **argv) {
 		value res;
 		list_for_each_entry(p, &a->siblings, siblings) {
 			eval(p, global_symtab, &res);
-			switch (res.type) {
-				case VT_BOOLEAN:
-					printf("==> %s\n", res.value.b ? "true" : "false");
-					break;
-				case VT_NUMERIC:
-					printf("==> %f\n", res.value.n);
-					break;
-				case VT_FUNCTION:
-					printf("==> function [%p] %s\n", res.value.f.node, res.value.f.env ? "(closure)" : "");
-					break;
-				case VT_LIST: {
-					printf("==> list [%p] {", res.value.l);
-					value_list *p;
-					list_for_each_entry(p, &(res.value.l)->siblings, siblings) {
-						printf(" %s[%p]", value_type_to_string[p->element->type], p);
-					}
-					printf(" }\n");
-					break;
-				}
-				case VT_NOTHING:
-					break;
-				default:
-					AH_PRINTX("unknown value type\n");
-			}
+			print_value(&res);
 		}
 
 		free_ast(&a);
