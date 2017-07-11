@@ -12,7 +12,8 @@
 
 ";"         { return ';'; }
 ","         { return ','; }
-":="        { return ASGN; }
+":"         { return ':'; }
+":="        { return BIND; }
 "("         { return '('; }
 ")"         { return ')'; }
  /* lambda abstraction term */
@@ -22,6 +23,7 @@
 "{"         { return '{'; }
 "}"         { return '}'; }
 "@"         { return '@'; }
+"!"         { return '!'; }
  /* mathematical operators */
 "+"         { return '+'; }
 "-"         { return '-'; }
@@ -41,9 +43,6 @@
 "and"       { return AND; }
 "or"        { return OR; }
 "not"       { return NOT; }
- /* lazy evaluation */
-"$"         { return DELAY; }
-"!"         { return FORCE; }
  /* branching */
 "if"        { return IF; }
 "cond"      { return COND; }
@@ -70,6 +69,9 @@
  /* whitespace */
 [ \r\t]     { }
 \n          { return EOL; }
+
+ /* unused symbols */
+.           { }
 
 <<EOF>>     { return 0; }
 

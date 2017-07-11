@@ -13,6 +13,7 @@
 void build_environment(symtab*, symtab*, symtab*, ast*);
 symtab *get_environment(symtab*, const node_function *const);
 
+void eval_error(char*, value*);
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
 void eval_n_n_n(ast*, ast*, symtab*, value*, node_type);
 void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
@@ -166,8 +167,7 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "LHS operand not numeric.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "LHS operand not numeric.\n", res);
 		return;
 	}
 	n1 = res->value.n;
@@ -176,8 +176,7 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "RHS operand not numeric.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "RHS operand not numeric.\n", res);
 		return;
 	}
 	n2 = res->value.n;
@@ -202,9 +201,14 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 			res->value.n = pow(n2, 1/n1);
 			break;
 		default:
-			yyerror(NULL, RED "FATAL ERROR: invalid operator\n" RESET);
+			fprintf(stderr, RED "FATAL ERROR: invalid operator\n" RESET);
 			exit(EXIT_FAILURE);
 	}
+}
+
+void eval_error(char *s, value *res) {
+	fprintf(stderr, RED "ERROR: " RESET "%s\n", s);
+	res->type = VT_NOTHING;
 }
 
 // binary operations: numerical -> numerical -> boolean
@@ -215,8 +219,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "LHS operand not numeric.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "LHS operand not numeric.\n", res);
 		return;
 	}
 	n1 = res->value.n;
@@ -225,8 +228,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "RHS operand not numeric.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "RHS operand not numeric.\n", res);
 		return;
 	}
 	n2 = res->value.n;
@@ -252,7 +254,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 			res->value.b = n1 >= n2;
 			break;
 		default:
-			yyerror(NULL, RED "FATAL ERROR: invalid operator\n" RESET);
+			fprintf(stderr, RED "FATAL ERROR: invalid operator\n" RESET);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -265,8 +267,7 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_BOOLEAN) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "LHS operand not boolean.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "LHS operand not boolean.\n", res);
 		return;
 	}
 	b1 = res->value.b;
@@ -275,8 +276,7 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_BOOLEAN) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "RHS operand not boolean.\n");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "RHS operand not boolean.\n", res);
 		return;
 	}
 	b2 = res->value.b;
@@ -289,7 +289,7 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 			res->value.b = b1 || b2;
 			break;
 		default:
-			yyerror(NULL, RED "FATAL ERROR: invalid operator\n" RESET);
+			fprintf(stderr, RED "FATAL ERROR: invalid operator\n" RESET);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -361,8 +361,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 		return;
 
 	if (res->type != VT_FUNCTION) {
-		yyerror(NULL, RED "TYPE ERROR: " RESET "LHS operand is not a function.");
-		res->type = VT_NOTHING;
+		eval_error(RED "TYPE ERROR: " RESET "LHS operand is not a function.", res);
 		return;
 	}
 
@@ -373,16 +372,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a1 = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
-					yyerror(NULL, "Invalid type: append argument is not a function.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
 				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
 					break;
 				}
@@ -414,8 +411,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a1 = malloc(sizeof(value)); // function
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
-					yyerror(NULL, "Invalid type: append argument is not a function.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
@@ -429,8 +425,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a3 = malloc(sizeof(value)); // list
 				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
 				if (res_a3->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
 					free(res_a2);
 					break;
@@ -466,8 +461,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a1 = malloc(sizeof(value)); // function
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
-					yyerror(NULL, "Invalid type: append argument is not a function.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
@@ -481,8 +475,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a3 = malloc(sizeof(value)); // list
 				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
 				if (res_a3->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
 					free(res_a2);
 					break;
@@ -537,16 +530,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a1 = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
-					yyerror(NULL, "Invalid type: append argument is not a function.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
 				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
 					break;
 				}
@@ -582,13 +573,11 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			case FT_HEAD: {
 				eval(list_entry(param_list->children, ast, siblings), st, res);
 				if (res->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: reverse argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
 				}
 				if (!res->value.l) {
-					yyerror(NULL, "List is empty.");
-					res->type = VT_NOTHING;
+					eval_error("List is empty.", res);
 					break;
 				}
 				res->type = (res->value.l)->element->type;
@@ -599,8 +588,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_tmp = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: reverse argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
 				}
 
@@ -630,8 +618,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_tmp = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: reverse argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
 				}
 
@@ -660,16 +647,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_a1 = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
 				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: append argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
 					break;
 				}
@@ -711,8 +696,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				value *res_tmp = malloc(sizeof(value));
 				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
-					yyerror(NULL, "Invalid type: reverse argument is not a list.");
-					res->type = VT_NOTHING;
+					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
 				}
 
@@ -726,8 +710,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				break;
 			}
 			default:
-				yyerror(NULL, "Unimplemented function type.");
-				res->type = VT_NOTHING;
+				eval_error("Unimplemented function type.", res);
 		}
 		return;
 	}
@@ -735,7 +718,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 	value args; // TODO deep free
 	value_list *l;
 	if (!make_list(param_list, st, &args)) {
-		yyerror(NULL, "Empty param_list.");
+		fprintf(stderr, "FATAL ERROR Empty param_list.");
 		exit(EXIT_FAILURE);
 	}
 
@@ -791,8 +774,7 @@ void eval(ast *a, symtab *st, value *res) {
 				if (res->type == VT_NOTHING)
 					return;
 				if (res->type != VT_BOOLEAN) {
-					yyerror(NULL, RED "TYPE ERROR: " RESET "operand not boolean.\n");
-					res->type = VT_NOTHING;
+					eval_error(RED "TYPE ERROR: " RESET "operand not boolean.\n", res);
 				} else {
 					res->value.b = !res->value.b;
 				}
@@ -802,8 +784,7 @@ void eval(ast *a, symtab *st, value *res) {
 				if (res->type == VT_NOTHING)
 					return;
 				if (res->type != VT_BOOLEAN) {
-					yyerror(NULL, "Invalid type for if expression.");
-				res->type = VT_NOTHING;
+					eval_error("Invalid type for if expression.", res);
 				} else {
 					if (res->value.b) {
 						eval(((node_if*)a)->t, st, res);
@@ -824,8 +805,7 @@ void eval(ast *a, symtab *st, value *res) {
 				if (s) {
 					get_value(s, res);
 				} else {
-					yyerror(NULL, "symbol not found");
-					res->type = VT_NOTHING;
+					eval_error("symbol not found", res);
 				}
 				break;
 			}
@@ -917,8 +897,7 @@ void eval(ast *a, symtab *st, value *res) {
 				break;
 			}
 			default:
-				yyerror(NULL, "unknown node type");
-				res->type = VT_NOTHING;
+				eval_error("unknown node type", res);
 		}
 	} else {
 		printf(RED "FATAL ERROR: eval null\n" RESET);

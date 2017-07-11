@@ -13,14 +13,20 @@ void yyerror(ast **a, char const *s) {
 	fprintf(stderr, RED "ERROR: " RESET "%s\n", s);
 }
 
-ast *new_ast(node_type type, ...) {
-	ast *a = malloc(sizeof(ast));
-	INIT_LIST_HEAD(&a->siblings);
+void *ah_malloc(size_t size) {
+	ast *a = malloc(size);
 
 	if(!a) {
 		yyerror(NULL, "out of space");
 		exit(EXIT_FAILURE);
 	}
+
+	return a;
+}
+
+ast *new_ast(node_type type, ...) {
+	ast *a = ah_malloc(sizeof(ast));
+	INIT_LIST_HEAD(&a->siblings);
 
 	a->type = type;
 
@@ -38,13 +44,8 @@ ast *new_ast(node_type type, ...) {
 }
 
 ast *new_ident(char *i) {
-	node_identifier *a = malloc(sizeof(node_identifier));
+	node_identifier *a = ah_malloc(sizeof(node_identifier));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_IDENTIFIER;
 	a->i = i;
@@ -54,13 +55,8 @@ ast *new_ident(char *i) {
 }
 
 ast *new_num(double d) {
-	node_numval *a = malloc(sizeof(node_numval));
+	node_numval *a = ah_malloc(sizeof(node_numval));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_NUMERIC;
 	a->number = d;
@@ -70,13 +66,8 @@ ast *new_num(double d) {
 }
 
 ast *new_bool(bool b) {
-	node_boolval *a = malloc(sizeof(node_boolval));
+	node_boolval *a = ah_malloc(sizeof(node_boolval));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_BOOLEAN;
 	a->value = b;
@@ -86,13 +77,8 @@ ast *new_bool(bool b) {
 }
 
 ast *new_asgn(char *i, ast *v) {
-	node_assignment *a = malloc(sizeof(node_assignment));
+	node_assignment *a = ah_malloc(sizeof(node_assignment));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_ASSIGNMENT;
 	a->i = i;
@@ -102,13 +88,8 @@ ast *new_asgn(char *i, ast *v) {
 }
 
 ast *new_func(ast *args, ast *expr_list) {
-	node_function *a = malloc(sizeof(node_function));
+	node_function *a = ah_malloc(sizeof(node_function));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_FUNCTION;
 	a->args = &args->siblings;
@@ -120,13 +101,8 @@ ast *new_func(ast *args, ast *expr_list) {
 }
 
 ast *new_env(ast *expr_list) {
-	node_function *a = malloc(sizeof(node_function));
+	node_function *a = ah_malloc(sizeof(node_function));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_ENV;
 	a->children = &expr_list->siblings;
@@ -137,13 +113,8 @@ ast *new_env(ast *expr_list) {
 }
 
 ast *new_list(ast *list) {
-	node_function *a = malloc(sizeof(node_function));
+	node_function *a = ah_malloc(sizeof(node_function));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_LIST;
 	a->children = list ? &list->siblings : NULL;
@@ -156,24 +127,15 @@ ast *new_list(ast *list) {
 ast *new_apply(ast *func, ast *param_list) {
 	if (!param_list) {
 		yyerror(NULL, "empty args call not supported.");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
-	ast *a = malloc(sizeof(ast));
+
+	ast *a = ah_malloc(sizeof(ast));
 	INIT_LIST_HEAD(&a->siblings);
 
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
-
 	a->type = NT_APPLY;
-
-	if (param_list) {
-		a->children = &new_ast(NT_LIST, param_list)->siblings;
-		list_add_tail(&func->siblings, a->children);
-	} else {
-		a->children = NULL;
-	}
+	a->children = &new_ast(NT_LIST, param_list)->siblings;
+	list_add_tail(&func->siblings, a->children);
 
 	AH_PRINT("\t(!) new apply [%p]\n", a);
 
@@ -181,13 +143,8 @@ ast *new_apply(ast *func, ast *param_list) {
 }
 
 ast *new_if(ast *expr, ast *t, ast *f) {
-	node_if *a = malloc(sizeof(node_if));
+	node_if *a = ah_malloc(sizeof(node_if));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	a->type = NT_IF;
 
@@ -201,13 +158,8 @@ ast *new_if(ast *expr, ast *t, ast *f) {
 }
 
 ast *new_builtin(node_type type) {
-	ast *a = malloc(sizeof(ast));
+	ast *a = ah_malloc(sizeof(ast));
 	INIT_LIST_HEAD(&a->siblings);
-
-	if(!a) {
-		yyerror(NULL, "out of space");
-		exit(EXIT_FAILURE);
-	}
 
 	switch (type) {
 		case NT_MAP:

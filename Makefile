@@ -61,6 +61,14 @@ test10: CFLAGS += -DAH_DEBUG
 test10: clean ahci
 	@echo "foldl{[a,x|a+x],-2,map@[x|x*2],{1,2,3}}" | ./ahci
 
+test11: CFLAGS += -DAH_DEBUG 
+test11: clean ahci
+	@echo "f:=[x|f@x]; g:=[x|f@x]; 11" | ./ahci
+
+test12: CFLAGS += -DAH_DEBUG 
+test12: clean ahci
+	@echo "even := [n | if n=0 [true] [odd{n-1}]]; odd := [n | if n=0 [false] [even{n-1}]]; even@5" | ./ahci
+
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci
 	./ahci

@@ -4,10 +4,10 @@
 #include <math.h>
 #include "parser.h"
 
+#define ADD(node) if(!(node)) YYABORT
+
 extern int yylex();
-/*
-extern int yyerror(ast**, char const*); // XXX eliminar?
-*/
+extern void yyerror(ast**, char const*);
 %}
 %error-verbose
 
@@ -18,23 +18,22 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 	bool b;
 }
 
-%type <a> prog expr_list maybe_expr expr lit env list params_high params_low args built_in
+%type <a> prog expr_list maybe_expr expr lit env list params_high params_low args arg built_in
 
+%token END 0 "end of expression"
 %token EOL
-%token ASGN
-%token EXP
-%token ROOT
+%token BIND ":="
+%token EXP "**"
+%token ROOT "//"
 %token LOG
 %token MOD
 %token REM
-%token NE
-%token LE
-%token GE
+%token NE "/="
+%token LE "<="
+%token GE ">="
 %token AND
 %token OR
 %token NOT
-%token DELAY
-%token FORCE
 %token IF
 %token COND
 %token CASE
@@ -55,7 +54,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %token <b> TRUE
 %token <b> FALSE
 
-%precedence ASGN
+%precedence BIND
 %left AND OR NOT
 %left '=' NE
 %left '<' LE '>' GE
@@ -69,6 +68,7 @@ extern int yyerror(ast**, char const*); // XXX eliminar?
 %precedence PARAM_HIGH
 %precedence ','
 %precedence '@'
+%precedence '!'
 
 %parse-param { ast **root }
 
@@ -95,7 +95,8 @@ expr
 | env
 | list { $$ = new_list($1); }
 | IDENT { $$ = new_ident($1); }
-| IDENT ASGN expr { $$ = new_asgn($1, $3); }
+| IDENT BIND expr { $$ = new_asgn($1, $3); }
+| IDENT ':' IDENT BIND expr { $$ = new_asgn($1, $5); }
 | expr '+' expr { $$ = new_ast(NT_ADDITION, $1, $3); }
 | expr '-' expr { $$ = new_ast(NT_SUBTRACTION, $1, $3); }
 | expr '*' expr { $$ = new_ast(NT_MULTIPLICATION, $1, $3); }
@@ -114,8 +115,9 @@ expr
 | NOT expr { $$ = new_ast(NT_NOT, $2); }
 | '(' expr ')' { $$ = $2; }
 | '[' args '|' expr_list ']' { $$ = new_func($2, $4); }
-| expr list { $$ = new_apply($1, $2); }
+| expr list { ADD($$ = new_apply($1, $2)); }
 | expr '@' params_high { $$ = new_apply($1, $3); }
+| '!' expr { $$ = new_apply($2, NULL); }
 | IF expr env env { $$ = new_if($2, $3, $4); }
 | built_in
 ;
@@ -146,8 +148,13 @@ params_high
 ;
 
 args
+: arg
+| args ',' arg { if ($1 && $3) list_add_tail(&$3->siblings, &$1->siblings); }
+;
+
+arg
 : IDENT { $$ = new_ident($1); }
-| args ',' IDENT { if ($1 && $3) list_add_tail(&new_ident($3)->siblings, &$1->siblings); }
+| IDENT ':' IDENT { $$ = new_ident($1); }
 ;
 
 built_in
