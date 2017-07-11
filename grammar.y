@@ -4,8 +4,6 @@
 #include <math.h>
 #include "parser.h"
 
-#define ADD(node) if(!(node)) YYABORT
-
 extern int yylex();
 extern void yyerror(ast**, char const*);
 %}
@@ -115,7 +113,7 @@ expr
 | NOT expr { $$ = new_ast(NT_NOT, $2); }
 | '(' expr ')' { $$ = $2; }
 | '[' args '|' expr_list ']' { $$ = new_func($2, $4); }
-| expr list { ADD($$ = new_apply($1, $2)); }
+| expr list { if(!($$ = new_apply($1, $2))) YYABORT; }
 | expr '@' params_high { $$ = new_apply($1, $3); }
 | '!' expr { $$ = new_apply($2, NULL); }
 | IF expr env env { $$ = new_if($2, $3, $4); }
