@@ -17,7 +17,7 @@ void eval_error(char*, value*);
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
 void eval_n_n_n(ast*, ast*, symtab*, value*, node_type);
 void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
-void eval_force(ast*, symtab*, value*);
+void eval_forced(ast*, symtab*, value*);
 void eval_apply(ast*, ast*, symtab*, value*);
 void eval(ast*, symtab*, value*);
 
@@ -172,7 +172,7 @@ symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
 void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	double n1, n2;
 
-	eval(l, st, res);
+	eval_forced(l, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
@@ -181,7 +181,7 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	}
 	n1 = res->value.n;
 
-	eval(r, st, res);
+	eval_forced(r, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
@@ -224,7 +224,7 @@ void eval_error(char *s, value *res) {
 void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	double n1, n2;
 
-	eval(l, st, res);
+	eval_forced(l, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
@@ -233,7 +233,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	}
 	n1 = res->value.n;
 
-	eval(r, st, res);
+	eval_forced(r, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_NUMERIC) {
@@ -272,7 +272,7 @@ void eval_n_n_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	double b1, b2;
 
-	eval(l, st, res);
+	eval_forced(l, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_BOOLEAN) {
@@ -281,7 +281,7 @@ void eval_b_b_b(ast *l, ast *r, symtab *st, value *res, node_type op) {
 	}
 	b1 = res->value.b;
 
-	eval(r, st, res);
+	eval_forced(r, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 	if (res->type != VT_BOOLEAN) {
@@ -364,7 +364,7 @@ void apply(value *fun, value_list *args, symtab *st, value *res) {
 	free_symtab(local_symtab);
 }
 
-void eval_force(ast *a, symtab *st, value *res) {
+void eval_forced(ast *a, symtab *st, value *res) {
 	eval(a, st, res);
 	if (res->type != VT_THUNK)
 		return;
@@ -382,7 +382,7 @@ void eval_force(ast *a, symtab *st, value *res) {
 }
 
 void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
-	eval(function, st, res);
+	eval_forced(function, st, res);
 	if (res->type == VT_NOTHING)
 		return;
 
@@ -396,14 +396,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 		switch (res->value.f.type) {
 			case FT_MAP: {
 				value *res_a1 = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
 					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
-				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				eval_forced(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
@@ -435,21 +435,21 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			case FT_FOLDL:
 			case FT_FOLDR: {
 				value *res_a1 = malloc(sizeof(value)); // function
-				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
 					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value)); // accumulator
-				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				eval_forced(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type == VT_NOTHING) {
 					free(res_a1);
 					break;
 				}
 
 				value *res_a3 = malloc(sizeof(value)); // list
-				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
+				eval_forced(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
 				if (res_a3->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
@@ -485,21 +485,21 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			case FT_SCANL:
 			case FT_SCANR: {
 				value *res_a1 = malloc(sizeof(value)); // function
-				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
 					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value)); // accumulator
-				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				eval_forced(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type == VT_NOTHING) {
 					free(res_a1);
 					break;
 				}
 
 				value *res_a3 = malloc(sizeof(value)); // list
-				eval(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
+				eval_forced(list_entry(param_list->children->next->next, ast, siblings), st, res_a3);
 				if (res_a3->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
@@ -554,14 +554,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			}
 			case FT_FILTER: {
 				value *res_a1 = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_FUNCTION) {
 					eval_error("Invalid type: append argument is not a function.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
-				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				eval_forced(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
@@ -597,7 +597,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 				break;
 			}
 			case FT_HEAD: {
-				eval(list_entry(param_list->children, ast, siblings), st, res);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res);
 				if (res->type != VT_LIST) {
 					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
@@ -612,7 +612,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			}
 			case FT_TAIL: {
 				value *res_tmp = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
 					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
@@ -642,7 +642,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			}
 			case FT_REVERSE: {
 				value *res_tmp = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
 					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
@@ -671,14 +671,14 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			}
 			case FT_APPEND: {
 				value *res_a1 = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_a1);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_a1);
 				if (res_a1->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					break;
 				}
 
 				value *res_a2 = malloc(sizeof(value));
-				eval(list_entry(param_list->children->next, ast, siblings), st, res_a2);
+				eval_forced(list_entry(param_list->children->next, ast, siblings), st, res_a2);
 				if (res_a2->type != VT_LIST) {
 					eval_error("Invalid type: append argument is not a list.", res);
 					free(res_a1);
@@ -720,7 +720,7 @@ void eval_apply(ast *function, ast *param_list, symtab *st, value *res) {
 			}
 			case FT_LENGTH: {
 				value *res_tmp = malloc(sizeof(value));
-				eval(list_entry(param_list->children, ast, siblings), st, res_tmp);
+				eval_forced(list_entry(param_list->children, ast, siblings), st, res_tmp);
 				if (res_tmp->type != VT_LIST) {
 					eval_error("Invalid type: reverse argument is not a list.", res);
 					break;
@@ -769,7 +769,7 @@ void eval(ast *a, symtab *st, value *res) {
 				res->value.b = ((node_boolval*)a)->value;
 				break;
 			case NT_NEGATIVE:
-				eval(ast_first_child(a), st, res);
+				eval_forced(ast_first_child(a), st, res);
 				if (res->type == VT_NOTHING)
 					return;
 				if (res->type == VT_NUMERIC)
@@ -796,7 +796,7 @@ void eval(ast *a, symtab *st, value *res) {
 				eval_b_b_b(ast_left(a), ast_right(a), st, res, a->type);
 				break;
 			case NT_NOT:
-				eval(ast_first_child(a), st, res);
+				eval_forced(ast_first_child(a), st, res);
 				if (res->type == VT_NOTHING)
 					return;
 				if (res->type != VT_BOOLEAN) {
@@ -806,16 +806,16 @@ void eval(ast *a, symtab *st, value *res) {
 				}
 				break;
 			case NT_IF: {
-				eval(((node_if*)a)->expr, st, res);
+				eval_forced(((node_if*)a)->expr, st, res);
 				if (res->type == VT_NOTHING)
 					return;
 				if (res->type != VT_BOOLEAN) {
 					eval_error("Invalid type for if expression.", res);
 				} else {
 					if (res->value.b) {
-						eval_force(((node_if*)a)->t, st, res);
+						eval_forced(((node_if*)a)->t, st, res);
 					} else {
-						eval_force(((node_if*)a)->f, st, res);
+						eval_forced(((node_if*)a)->f, st, res);
 					}
 				}
 				break;
@@ -841,7 +841,7 @@ void eval(ast *a, symtab *st, value *res) {
 				res->value.t.env = NULL; // get_environment(st, res->value.t.node); // TODO
 				break;
 			case NT_FORCE:
-				eval_force(ast_left(a), st, res);
+				eval_forced(ast_left(a), st, res);
 				break;
 			case NT_FUNCTION: {
 				ast *p;
