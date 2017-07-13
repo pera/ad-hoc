@@ -1,6 +1,6 @@
 # Ad-hoc programming language
 
-Ad-hoc is an experimental programming language currently supporting the following features: first-class functions, immutability, lambda terms, recursion, closures, lexical and dynamic scopes, and deep binding.
+Ad-hoc is an experimental programming language currently supporting the following features: first-class functions, immutability, lambda terms, recursion, closures, strict and non-strict evaluation, lexical and dynamic scopes, and deep binding.
 
 ## Building Instructions
 
