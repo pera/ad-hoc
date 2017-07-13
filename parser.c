@@ -33,10 +33,10 @@ ast *new_ast(node_type type, ...) {
 	va_list parameters;
 	va_start(parameters, type);
 	a->children = &va_arg(parameters, ast*)->siblings;
-	 AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
+	//AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
 	if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST) // XXX HACK fix this
 		list_add_tail(&va_arg(parameters, ast*)->siblings, a->children);
-	AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
+	//AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
 
 	AH_PRINT("\t(!) new ast %s [%p]\n", node_type_to_string[type], a);
 
@@ -100,14 +100,14 @@ ast *new_func(ast *args, ast *expr_list) {
 	return (ast *)a;
 }
 
-ast *new_env(ast *expr_list) {
+ast *new_thunk(ast *expr_list) {
 	node_function *a = ah_malloc(sizeof(node_function));
 	INIT_LIST_HEAD(&a->siblings);
 
-	a->type = NT_ENV;
+	a->type = NT_THUNK;
 	a->children = &expr_list->siblings;
 
-	AH_PRINT("\t(!) new env [%p]: expr_list [%p]\n", a, expr_list);
+	AH_PRINT("\t(!) new thunk [%p]: expr_list [%p]\n", a, expr_list);
 
 	return (ast *)a;
 }
@@ -142,6 +142,17 @@ ast *new_apply(ast *func, ast *param_list) {
 	return a;
 }
 
+ast *new_force(ast *thunk) {
+	ast *a = ah_malloc(sizeof(ast));
+	INIT_LIST_HEAD(&a->siblings);
+
+	a->type = NT_FORCE;
+	a->children = &thunk->siblings;
+
+	AH_PRINT("\t(!) new apply [%p]\n", a);
+
+	return a;
+}
 ast *new_if(ast *expr, ast *t, ast *f) {
 	node_if *a = ah_malloc(sizeof(node_if));
 	INIT_LIST_HEAD(&a->siblings);

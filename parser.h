@@ -10,6 +10,7 @@
         _(VT_BOOLEAN) \
         _(VT_NUMERIC) \
         _(VT_FUNCTION) \
+        _(VT_THUNK) \
         _(VT_LIST) \
         _(VT__END) \
 
@@ -43,7 +44,8 @@ typedef enum function_type function_type;
         _(NT_LIST) \
         _(NT_ASSIGNMENT) \
         _(NT_FUNCTION) \
-        _(NT_ENV) \
+        _(NT_THUNK) \
+        _(NT_FORCE) \
         _(NT_APPLY) \
         _(NT_ADDITION) \
         _(NT_SUBTRACTION) \
@@ -79,7 +81,7 @@ AH_DEFINE_ASSOCIATIVE_ENUM(node_type, node_type_to_string, AH_NODE_TYPE);
 typedef enum node_type node_type;
 
 #define AH_NODE_INFO(n) \
-	AH_PRINT("Node " BLUE #n RESET " [%p] is a " YELLOW "%s" RESET "\n", n, node_type_to_string[n->type]);
+	AH_PRINT("Node variable " BLUE #n RESET " [%p] is a " YELLOW "%s" RESET "\n", n, node_type_to_string[n->type]);
 
 #define ast_first_child(pos) \
 	list_entry((pos)->children, typeof(*(pos)), siblings)
@@ -102,9 +104,10 @@ ast *new_num(double);
 ast *new_bool(bool);
 ast *new_asgn(char*, ast*);
 ast *new_func(ast*, ast*);
-ast *new_env(ast*);
+ast *new_thunk(ast*);
 ast *new_list(ast*);
 ast *new_apply(ast*, ast*);
+ast *new_force(ast*);
 ast *new_if(ast*, ast*, ast*);
 ast *new_builtin(node_type);
 
@@ -114,6 +117,7 @@ void yyerror(ast**, char const*);
 int parse_string(char*, ast**);
 
 typedef struct value_function_ value_function;
+typedef struct value_thunk_ value_thunk;
 typedef struct value_list_ value_list;
 typedef struct value_ value;
 typedef struct symbol_ symbol;
@@ -123,6 +127,11 @@ typedef struct node_function_ node_function;
 struct value_function_ {
 	function_type type;
 	node_function *node;
+	symtab *env;
+};
+
+struct value_thunk_ {
+	ast *node;
 	symtab *env;
 };
 
@@ -137,6 +146,7 @@ struct value_ {
 		bool b;
 		double n;
 		value_function f;
+		value_thunk t;
 		value_list *l; // TODO change
 	} value;
 };

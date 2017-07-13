@@ -16,7 +16,7 @@ extern void yyerror(ast**, char const*);
 	bool b;
 }
 
-%type <a> prog expr_list maybe_expr expr lit env list params_high params_low args arg built_in
+%type <a> prog expr_list maybe_expr expr lit thunk list params_high params_low args arg built_in
 
 %token END 0 "end of expression"
 %token EOL
@@ -90,7 +90,7 @@ maybe_expr
 
 expr
 : lit
-| env
+| thunk
 | list { $$ = new_list($1); }
 | IDENT { $$ = new_ident($1); }
 | IDENT BIND expr { $$ = new_asgn($1, $3); }
@@ -113,10 +113,10 @@ expr
 | NOT expr { $$ = new_ast(NT_NOT, $2); }
 | '(' expr ')' { $$ = $2; }
 | '[' args '|' expr_list ']' { $$ = new_func($2, $4); }
-| expr list { if(!($$ = new_apply($1, $2))) YYABORT; }
+| expr list { if (!($$ = new_apply($1, $2))) YYABORT; }
 | expr '@' params_high { $$ = new_apply($1, $3); }
-| '!' expr { $$ = new_apply($2, NULL); }
-| IF expr env env { $$ = new_if($2, $3, $4); }
+| expr '!' { $$ = new_force($1); }
+| IF expr thunk thunk { $$ = new_if($2, $3, $4); }
 | built_in
 ;
 
@@ -126,8 +126,8 @@ lit
 | FALSE { $$ = new_bool(false); }
 ;
 
-env
-: '[' expr_list ']' { $$ = new_env($2); }
+thunk
+: '[' expr_list ']' { $$ = new_thunk($2); }
 ;
 
 list

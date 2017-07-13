@@ -69,6 +69,10 @@ test12: CFLAGS += -DAH_DEBUG
 test12: clean ahci
 	@echo "even := [n | if n=0 [true] [odd{n-1}]]; odd := [n | if n=0 [false] [even{n-1}]]; even@5" | ./ahci
 
+test13: CFLAGS += -DAH_DEBUG 
+test13: clean ahci
+	@echo "[t | a:=13; t!] @ [a]" | ./ahci
+
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci
 	./ahci

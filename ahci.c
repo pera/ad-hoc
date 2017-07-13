@@ -17,6 +17,7 @@ void eval_error(char*, value*);
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
 void eval_n_n_n(ast*, ast*, symtab*, value*, node_type);
 void eval_b_b_b(ast*, ast*, symtab*, value*, node_type);
+void eval_force(ast*, symtab*, value*);
 void eval_apply(ast*, ast*, symtab*, value*);
 void eval(ast*, symtab*, value*);
 
@@ -30,7 +31,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 				value res;
 				get_value(sym_lookup(parent_symtab, ((node_identifier *)a)->i), &res);
 				if (res.type == VT_NOTHING) {
-					printf(RED "Free variable \"%s\" was not previously declared.\n" RESET, ((node_identifier *)a)->i);
+					printf(YELLOW "WARNING: " RESET "Free variable \"%s\" was not previously declared.\n", ((node_identifier *)a)->i);
 				} else {
 					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
 					if (res.type == VT_FUNCTION && res.value.f.type == FT_NEW) {
@@ -57,7 +58,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 				sym_add(local_symtab, i->i);
 			}
 		} // no breaks!
-		case NT_ENV: {
+		case NT_THUNK: {
 			symtab *inner_symtab = new_symtab(local_symtab);
 			list_for_each_entry(p, a->children, siblings) {
 				AH_PRINT("building --> %s\n", node_type_to_string[p->type]);
@@ -76,6 +77,14 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			symtab *inner_symtab = new_symtab(local_symtab);
 			AH_NODE_INFO(ast_right(a));
 			build_environment(parent_symtab, inner_symtab, env, ast_right(a));
+			free_symtab(inner_symtab);
+			break;
+		}
+		case NT_FORCE: {
+			ast *p;
+			symtab *inner_symtab = new_symtab(local_symtab);
+			AH_NODE_INFO(ast_right(a));
+			build_environment(parent_symtab, inner_symtab, env, ast_left(a));
 			free_symtab(inner_symtab);
 			break;
 		}
@@ -352,6 +361,23 @@ void apply(value *fun, value_list *args, symtab *st, value *res) {
 			break;
 	}
 
+	free_symtab(local_symtab);
+}
+
+void eval_force(ast *a, symtab *st, value *res) {
+	eval(a, st, res);
+	if (res->type != VT_THUNK)
+		return;
+
+	ast *thunk = res->value.t.node;
+	symtab *local_symtab = new_symtab(st);
+	ast *p;
+	list_for_each_entry(p, thunk->children, siblings) {
+		eval(p, local_symtab, res);
+		if (res->type == VT_FUNCTION && res->value.f.type == FT_NEW && !res->value.f.env) {
+			res->value.f.env = get_environment(local_symtab, res->value.f.node);
+		}
+	}
 	free_symtab(local_symtab);
 }
 
@@ -787,9 +813,9 @@ void eval(ast *a, symtab *st, value *res) {
 					eval_error("Invalid type for if expression.", res);
 				} else {
 					if (res->value.b) {
-						eval(((node_if*)a)->t, st, res);
+						eval_force(((node_if*)a)->t, st, res);
 					} else {
-						eval(((node_if*)a)->f, st, res);
+						eval_force(((node_if*)a)->f, st, res);
 					}
 				}
 				break;
@@ -809,18 +835,14 @@ void eval(ast *a, symtab *st, value *res) {
 				}
 				break;
 			}
-			case NT_ENV: {
-				symtab *local_symtab = new_symtab(st);
-				ast *p;
-				list_for_each_entry(p, a->children, siblings) {
-					eval(p, local_symtab, res);
-					if (res->type == VT_FUNCTION && res->value.f.type == FT_NEW && !res->value.f.env) {
-						res->value.f.env = get_environment(local_symtab, res->value.f.node);
-					}
-				}
-				free_symtab(local_symtab);
+			case NT_THUNK:
+				res->type = VT_THUNK;
+				res->value.t.node = a;
+				res->value.t.env = NULL; // get_environment(st, res->value.t.node); // TODO
 				break;
-			}
+			case NT_FORCE:
+				eval_force(ast_left(a), st, res);
+				break;
 			case NT_FUNCTION: {
 				ast *p;
 				list_for_each_entry(p, ((node_function *)a)->args, siblings) {
@@ -916,6 +938,9 @@ void print_value(value *v) {
 				break;
 			case VT_FUNCTION:
 				printf("function [%p] %s", v->value.f.node, v->value.f.env ? "(closure)" : "");
+				break;
+			case VT_THUNK:
+				printf("thunk [%p] %s", v->value.t.node, v->value.t.env ? "(closure)" : "");
 				break;
 			case VT_LIST: {
 				printf("{ ");

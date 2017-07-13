@@ -58,13 +58,13 @@ symtab *new_symtab(symtab *parent) {
 	symtab *st = malloc(sizeof(symtab));
 	if (!st) {
 		yyerror(NULL, "unable to allocate more memory, exiting...");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	st->head = calloc(NHASH, sizeof(symbol));
 	if (!st->head) {
 		yyerror(NULL, "unable to allocate more memory, exiting...");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	st->parent = parent;
@@ -86,13 +86,14 @@ void set_value(symbol *s, value *res) {
 			case VT_BOOLEAN:
 			case VT_NUMERIC:
 			case VT_FUNCTION:
+			case VT_THUNK:
 			case VT_LIST:
 				s->v_ptr = malloc(sizeof(value));
 				memcpy(s->v_ptr, res, sizeof(value));
 				break;
 			default:
 				AH_PRINTX("Can't set value: unknown type\n");
-				exit(-1);
+				exit(EXIT_FAILURE);
 		}
 	} else {
 		res->type = VT_NOTHING;
