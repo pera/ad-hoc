@@ -838,7 +838,7 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_THUNK:
 				res->type = VT_THUNK;
 				res->value.t.node = a;
-				res->value.t.env = NULL; // get_environment(st, res->value.t.node); // TODO
+				res->value.t.env = get_environment(st, res->value.t.node);
 				break;
 			case NT_FORCE:
 				eval_forced(ast_left(a), st, res);

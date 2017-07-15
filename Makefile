@@ -73,6 +73,10 @@ test13: CFLAGS += -DAH_DEBUG
 test13: clean ahci
 	@echo "[t | a:=13; t!] @ [a]" | ./ahci
 
+test14: CFLAGS += -DAH_DEBUG 
+test14: clean ahci
+	@echo "[a|[a]]{10} + 4" | ./ahci
+
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci
 	./ahci
