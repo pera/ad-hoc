@@ -11,7 +11,8 @@
 #define VERSION "0.1.0"
 
 void build_environment(symtab*, symtab*, symtab*, ast*);
-symtab *get_environment(symtab*, const node_function *const);
+symtab *get_env_f(symtab*, const node_function *const);
+symtab *get_env_t(symtab*, const ast *const);
 
 void eval_error(char*, value*);
 void eval_n_n_b(ast*, ast*, symtab*, value*, node_type);
@@ -137,7 +138,9 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 	}
 }
 
-symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
+#define get_environment(st, n) _Generic((n), node_function*: get_env_f, ast*: get_env_t)(st, n)
+
+symtab *get_env_f(symtab *parent_symtab, const node_function *const fun) {
 	AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
 
 	symtab *tmp_symtab = new_symtab(NULL); // XXX To avoid lookup on outer scopes
@@ -151,6 +154,31 @@ symtab *get_environment(symtab *parent_symtab, const node_function *const fun) {
 
 	ast *p;
 	list_for_each_entry(p, ((node_function *)fun)->children, siblings) {
+		AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
+		build_environment(parent_symtab, tmp_symtab, env, p);
+	}
+
+	free_symtab(tmp_symtab);
+	if (!env->count) {
+		AH_PRINT("Temp environment unused, freeing...\n");
+		free_symtab(env);
+		env = NULL;
+	}
+
+	if (env) AH_PRINT(BLUE "=== (returning closure) ========\n" RESET);
+	else     AH_PRINT(BLUE "=== (returning nothing) ========\n" RESET);
+
+	return env;
+}
+
+symtab *get_env_t(symtab *parent_symtab, const ast *const thunk) {
+	AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
+
+	symtab *tmp_symtab = new_symtab(NULL); // XXX To avoid lookup on outer scopes
+	symtab *env = new_symtab(NULL); // XXX To avoid lookup on outer scopes
+
+	ast *p;
+	list_for_each_entry(p, thunk->children, siblings) {
 		AH_PRINT(" expr_list [%p] type: %s\n", p, node_type_to_string[p->type]);
 		build_environment(parent_symtab, tmp_symtab, env, p);
 	}
@@ -370,7 +398,15 @@ void eval_forced(ast *a, symtab *st, value *res) {
 		return;
 
 	ast *thunk = res->value.t.node;
-	symtab *local_symtab = new_symtab(st);
+
+	symtab *local_symtab;
+	if (res->value.t.env) {
+		local_symtab = new_symtab(res->value.t.env);
+		local_symtab->parent->parent = st; // XXX do not modify closure env
+	} else {
+		local_symtab = new_symtab(st);
+	}
+
 	ast *p;
 	list_for_each_entry(p, thunk->children, siblings) {
 		eval(p, local_symtab, res);
