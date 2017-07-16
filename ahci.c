@@ -51,6 +51,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			break;
 		case NT_ASSIGNMENT:
 			sym_add(local_symtab, ((node_assignment *)a)->i);
+			build_environment(parent_symtab, local_symtab, env, ((node_assignment *)a)->v);
 			break;
 		case NT_FUNCTION: {
 			node_identifier *i;
@@ -130,7 +131,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			// built-in
 			break;
 		default:
-			printf(RED "FATAL ERROR: %s: unknown value type: %i (%s)\n" RESET,
+			printf(RED "FATAL ERROR: %s: unknown node type: %i (%s)\n" RESET,
 			       __func__,
 			       a->type,
 			       node_type_to_string[a->type]);
