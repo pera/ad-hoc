@@ -32,8 +32,8 @@ For function application there are two options available: the *fun@params* synta
 
 Shown below is an example of a factorial function defined with a strict fixed point combinator:
 ```
-Y := [f | [x | x@x] @ [g | f @ [a | (g@g)@a]]]
-fac := Y @ [f | [x | if x<2 [1] [x*f{x-1}]]]
+Y := [f | [x | x@x] @ [g | f @ [a | (g@g)@a]]];
+fac := Y @ [f | [x | if x<2 [1] [x*f{x-1}]]];
 ```
 
 As we have already shown, mathematical expressions are written using infix notation. Aside of the common symbols for addition (`+`), subtraction (`-`), multiplication (`*`) and division (`/`), Ad-hoc also provides `**` for exponentiation, `//` for the `n`th root, `mod` for modulo and `log` for logarithm.
