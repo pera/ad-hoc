@@ -11,6 +11,8 @@
 #define VERSION "0.1.0"
 
 void build_environment(symtab*, symtab*, symtab*, ast*);
+
+#define get_environment(st, n) _Generic((n), node_function*: get_env_f, ast*: get_env_t)(st, n)
 symtab *get_env_f(symtab*, const node_function *const);
 symtab *get_env_t(symtab*, const ast *const);
 
@@ -23,22 +25,26 @@ void eval_apply(ast*, ast*, symtab*, value*);
 void eval(ast*, symtab*, value*);
 
 void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env, ast *a) {
+	AH_PRINT("\n");
 	AH_NODE_INFO(a);
 	ast *p;
 	switch (a->type) { // TODO use enum range macro to identify terminal and nonterminal (ie w/children) nodes
 		case NT_IDENTIFIER: {
-			if (!sym_lookup(local_symtab, ((node_identifier *)a)->i)) {
+			if (!sym_lookup(local_symtab, ((node_identifier *)a)->i) &&
+				!sym_lookup(env, ((node_identifier *)a)->i))
+			{
 				AH_PRINT(CYAN ">>> FREE VARIABLE: %s\n" RESET, ((node_identifier *)a)->i);
-				value res;
-				get_value(sym_lookup(parent_symtab, ((node_identifier *)a)->i), &res);
-				if (res.type == VT_NOTHING) {
-					printf(YELLOW "WARNING: " RESET "Free variable \"%s\" was not previously declared.\n", ((node_identifier *)a)->i);
+				value val;
+				get_value(sym_lookup(parent_symtab, ((node_identifier *)a)->i), &val);
+				if (val.type == VT_NOTHING) {
+					printf(YELLOW "WARNING: " RESET
+					       "Free variable \"%s\" was not previously declared.\n",
+					       ((node_identifier *)a)->i);
 				} else {
 					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
-					if (res.type == VT_FUNCTION && res.value.f.type == FT_NEW) {
-						build_environment(parent_symtab, local_symtab, env, (ast *)res.value.f.node);
-					} 
-					set_value(sym_add(env, ((node_identifier *)a)->i), &res);
+					if (val.type == VT_FUNCTION && val.value.f.type == FT_NEW)
+						build_environment(parent_symtab, local_symtab, env, (ast *)val.value.f.node);
+					set_value(sym_add(env, ((node_identifier *)a)->i), &val);
 				}
 			} else {
 				AH_PRINT(">>> BINDED VARIABLE (nothing to do): %s\n", ((node_identifier *)a)->i);
@@ -138,8 +144,6 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			exit(EXIT_FAILURE);
 	}
 }
-
-#define get_environment(st, n) _Generic((n), node_function*: get_env_f, ast*: get_env_t)(st, n)
 
 symtab *get_env_f(symtab *parent_symtab, const node_function *const fun) {
 	AH_PRINT(BLUE "=== SEARCHING FREE VARIABLES ===\n" RESET);
@@ -245,7 +249,7 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 }
 
 void eval_error(char *s, value *res) {
-	fprintf(stderr, RED "ERROR: " RESET "%s\n", s);
+	AH_PRINT_ERROR("%s\n", s);
 	res->type = VT_NOTHING;
 }
 

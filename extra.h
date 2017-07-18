@@ -23,6 +23,8 @@
 #define AH_STRINGIZE_(_) #_
 #define AH_STRINGIZE(_) AH_STRINGIZE_(_)
 
+#define AH_PRINT_ERROR(...) fprintf(stderr, RED "ERROR: " RESET __VA_ARGS__)
+
 #ifdef AH_DEBUG
 #define AH_PRINT(...) printf(__VA_ARGS__)
 #define AH_PRINTX(...) printf(BLUE "[" __FILE__ ":" AH_STRINGIZE(__LINE__) "] " RESET __VA_ARGS__)

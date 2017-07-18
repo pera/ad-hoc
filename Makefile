@@ -71,15 +71,23 @@ test12: clean ahci
 
 test13: CFLAGS += -DAH_DEBUG 
 test13: clean ahci
-	@echo "[t | a:=13; t!] @ [a]" | ./ahci
+	@echo "fib := [n | if n<2 [n] [fib{n-1} + fib{n-2}]]; fib@7" | ./ahci
 
 test14: CFLAGS += -DAH_DEBUG 
 test14: clean ahci
-	@echo "[a|[a]]{10} + 4" | ./ahci
+	@echo "[t | a:=14; t!] @ [a]" | ./ahci
 
 test15: CFLAGS += -DAH_DEBUG 
 test15: clean ahci
-	@echo "([x|[a|b:=[x];b+a]]@10)@5" | ./ahci
+	@echo "[a|[a]]{10} + 5" | ./ahci
+
+test16: CFLAGS += -DAH_DEBUG 
+test16: clean ahci
+	@echo "([x|[a|b:=[x];b+a]]@10)@6" | ./ahci
+
+test17: CFLAGS += -DAH_DEBUG 
+test17: clean ahci
+	@echo "([f|[f@f]]@[x|x])@17" | ./ahci
 
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci

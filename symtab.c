@@ -1,4 +1,5 @@
 #include "symtab.h"
+#include "extra.h"
 
 static unsigned quickhash(char *sym) {
 	register unsigned int hash = 0;
@@ -16,7 +17,7 @@ symbol *sym_add(symtab *st, char *sym) {
 
 	while (--scount >= 0) {
 		if (sp->name && !strcmp(sp->name, sym)) {
-			yyerror(NULL, "symbol already defined");
+			AH_PRINT_ERROR("symbol \"%s\" already defined\n", sym);
 			return NULL;
 		}
 
@@ -31,7 +32,7 @@ symbol *sym_add(symtab *st, char *sym) {
 			sp = st->head;
 	}
 	
-	yyerror(NULL, "symbol table overflow");
+	AH_PRINT_ERROR("symbol table overflow\n");
 	return NULL; //abort();
 }
 
@@ -57,13 +58,13 @@ symbol *sym_lookup(symtab *st, char *sym) {
 symtab *new_symtab(symtab *parent) {
 	symtab *st = malloc(sizeof(symtab));
 	if (!st) {
-		yyerror(NULL, "unable to allocate more memory, exiting...");
+		AH_PRINT_ERROR("unable to allocate more memory, exiting...\n");
 		exit(EXIT_FAILURE);
 	}
 
 	st->head = calloc(NHASH, sizeof(symbol));
 	if (!st->head) {
-		yyerror(NULL, "unable to allocate more memory, exiting...");
+		AH_PRINT_ERROR("unable to allocate more memory, exiting...\n");
 		exit(EXIT_FAILURE);
 	}
 
