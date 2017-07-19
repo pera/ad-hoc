@@ -151,8 +151,6 @@ struct value_ {
 	} value;
 };
 
-#define NHASH 9973
-
 struct symbol_ {
 	char *name;
 	value *v_ptr; // TODO improve

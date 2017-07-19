@@ -67,7 +67,7 @@ test11: clean ahci
 
 test12: CFLAGS += -DAH_DEBUG 
 test12: clean ahci
-	@echo "even := [n | if n=0 [true] [odd{n-1}]]; odd := [n | if n=0 [false] [even{n-1}]]; even@5" | ./ahci
+	@echo "even := [n | if n=0 [true] [odd{n-1}]]; odd := [n | if n=0 [false] [even{n-1}]]; if (even@5 and not odd@5 and odd@4 and not even@4) [0] [12]" | ./ahci
 
 test13: CFLAGS += -DAH_DEBUG 
 test13: clean ahci
@@ -88,6 +88,10 @@ test16: clean ahci
 test17: CFLAGS += -DAH_DEBUG 
 test17: clean ahci
 	@echo "([f|[f@f]]@[x|x])@17" | ./ahci
+
+test18: CFLAGS += -DAH_DEBUG 
+test18: clean ahci
+	@echo "f:=[x|f];f;123456;[f];18" | ./ahci
 
 try: CFLAGS += -DAH_DEBUG 
 try: clean ahci

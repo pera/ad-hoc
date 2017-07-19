@@ -42,9 +42,9 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 					       ((node_identifier *)a)->i);
 				} else {
 					AH_PRINT("Variable's scope found, adding to environment [%p].\n", env);
+					set_value(sym_add(env, ((node_identifier *)a)->i), &val);
 					if (val.type == VT_FUNCTION && val.value.f.type == FT_NEW)
 						build_environment(parent_symtab, local_symtab, env, (ast *)val.value.f.node);
-					set_value(sym_add(env, ((node_identifier *)a)->i), &val);
 				}
 			} else {
 				AH_PRINT(">>> BINDED VARIABLE (nothing to do): %s\n", ((node_identifier *)a)->i);
@@ -415,9 +415,10 @@ void eval_forced(ast *a, symtab *st, value *res) {
 	ast *p;
 	list_for_each_entry(p, thunk->children, siblings) {
 		eval(p, local_symtab, res);
-		if (res->type == VT_FUNCTION && res->value.f.type == FT_NEW && !res->value.f.env) {
-			res->value.f.env = get_environment(local_symtab, res->value.f.node);
-		}
+		if (res->type == VT_NOTHING)
+			break;
+		if (res->type == VT_FUNCTION && res->value.f.type == FT_NEW && !res->value.f.env)
+			res->value.f.env = get_environment(local_symtab, res->value.f.node); // ???
 	}
 	free_symtab(local_symtab);
 }
@@ -868,6 +869,7 @@ void eval(ast *a, symtab *st, value *res) {
 				set_value(sym_add(st, ((node_assignment *)a)->i), res);
 				break;
 			case NT_IDENTIFIER: {
+				AH_PRINT("Symbol lookup: symtab [%p]\n", st);
 				symbol *s = sym_lookup(st, ((node_identifier *)a)->i);
 				if (s) {
 					get_value(s, res);

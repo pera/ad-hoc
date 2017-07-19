@@ -5,6 +5,8 @@
 #include <string.h>
 #include "parser.h"
 
+#define NHASH 997
+
 symbol *sym_add(symtab*, char*);
 symbol *sym_lookup(symtab*, char*);
 
