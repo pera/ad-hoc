@@ -10,12 +10,15 @@ Ad-hoc is an experimental programming language currently supporting the followin
 * GNU Bison 3
 * Flex
 * GNU Make
+* Autotools
 * GNU Readline
-* *(optionals)* GDB, Valgrind, DejaGnu
+* *(optional)* DejaGnu
 
 ### Build and start the REPL
 
 ```sh
+$ autoreconf --install
+$ ./configure
 $ make
 $ ./ahci
 ```
