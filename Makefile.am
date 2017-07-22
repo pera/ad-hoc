@@ -1,6 +1,6 @@
 AM_YFLAGS = -Wall -rall -d
 bin_PROGRAMS = ahci
-ahci_SOURCES = ahci.c list.h extra.h parser.c parser.h symtab.c symtab.h grammar.y lex.l
+ahci_SOURCES = src/ahci.c src/list.h src/extra.h src/parser.c src/parser.h src/symtab.c src/symtab.h src/grammar.y src/lex.l
 
 AUTOMAKE_OPTIONS = dejagnu
 DEJATOOL = ahci

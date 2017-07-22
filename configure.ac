@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([Ad-hoc], [0.1.0])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_YACC
