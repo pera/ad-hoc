@@ -5,7 +5,7 @@
 
 #include "parser.h"
 #include "extra.h"
-#include "grammar.tab.h"
+#include "grammar.h"
 %}
 
 %%
