@@ -1,4 +1,4 @@
-AM_YFLAGS = -Wall -rall -d
+AM_YFLAGS = -Werror=all -rall -d
 bin_PROGRAMS = ahci
 ahci_SOURCES = src/ahci.c src/list.h src/extra.h src/parser.c src/parser.h src/symtab.c src/symtab.h src/grammar.y src/lex.l
 

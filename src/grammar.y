@@ -24,8 +24,6 @@ extern void yyerror(ast**, char const*);
 %token EXP "**"
 %token ROOT "//"
 %token LOG
-%token MOD
-%token REM
 %token NE "/="
 %token LE "<="
 %token GE ">="
@@ -59,6 +57,7 @@ extern void yyerror(ast**, char const*);
 %left '+' '-'
 %left '*' '/'
 %left EXP ROOT
+%left '%' LOG
 %precedence NEG
 
 %precedence '{'
@@ -100,7 +99,9 @@ expr
 | expr '*' expr { $$ = new_ast(NT_MULTIPLICATION, $1, $3); }
 | expr '/' expr { $$ = new_ast(NT_DIVISION, $1, $3); }
 | expr EXP expr { $$ = new_ast(NT_EXPONENTIATION, $1, $3); }
-| expr ROOT expr { $$ = new_ast(NT_ROOT, $1, $3); }
+| expr ROOT expr { $$ = new_ast(NT_NTHROOT, $1, $3); }
+| expr '%' expr { $$ = new_ast(NT_MODULO, $1, $3); }
+| LOG expr { $$ = new_ast(NT_LOG, $2); }
 | '-' expr %prec NEG { $$ = new_ast(NT_NEGATIVE, $2); }
 | expr '=' expr { $$ = new_ast(NT_EQUAL, $1, $3); }
 | expr NE expr { $$ = new_ast(NT_NOTEQUAL, $1, $3); }

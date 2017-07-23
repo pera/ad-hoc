@@ -102,7 +102,7 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 		case NT_MULTIPLICATION:
 		case NT_DIVISION:
 		case NT_EXPONENTIATION:
-		case NT_ROOT:
+		case NT_NTHROOT:
 		case NT_NEGATIVE:
 		case NT_EQUAL:
 		case NT_NOTEQUAL:
@@ -239,8 +239,11 @@ void eval_n_n_n(ast *l, ast *r, symtab *st, value *res, node_type op) {
 		case NT_EXPONENTIATION:
 			res->value.n = pow(n1, n2);
 			break;
-		case NT_ROOT:
+		case NT_NTHROOT:
 			res->value.n = pow(n2, 1/n1);
+			break;
+		case NT_MODULO:
+			res->value.n = (long long)n1 % (long long)n2;
 			break;
 		default:
 			fprintf(stderr, RED "FATAL ERROR: invalid operator\n" RESET);
@@ -817,12 +820,20 @@ void eval(ast *a, symtab *st, value *res) {
 				if (res->type == VT_NUMERIC)
 					res->value.n *= -1;
 				break;
+			case NT_LOG:
+				eval_forced(ast_first_child(a), st, res);
+				if (res->type == VT_NOTHING)
+					return;
+				if (res->type == VT_NUMERIC)
+					res->value.n = log(res->value.n);
+				break;
 			case NT_ADDITION:
 			case NT_SUBTRACTION:
 			case NT_MULTIPLICATION:
 			case NT_DIVISION:
 			case NT_EXPONENTIATION:
-			case NT_ROOT:
+			case NT_NTHROOT:
+			case NT_MODULO:
 				eval_n_n_n(ast_left(a), ast_right(a), st, res, a->type);
 				break;
 			case NT_EQUAL:

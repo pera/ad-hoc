@@ -34,7 +34,7 @@ ast *new_ast(node_type type, ...) {
 	va_start(parameters, type);
 	a->children = &va_arg(parameters, ast*)->siblings;
 	//AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
-	if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST) // XXX HACK fix this
+	if (a->type != NT_NEGATIVE && a->type != NT_NOT && a->type != NT_LIST && a->type != NT_LOG) // XXX fix this
 		list_add_tail(&va_arg(parameters, ast*)->siblings, a->children);
 	//AH_PRINT(">>> %p\n", ast_left(a)->siblings.prev);
 

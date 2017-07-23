@@ -52,7 +52,9 @@ typedef enum function_type function_type;
         _(NT_MULTIPLICATION) \
         _(NT_DIVISION) \
         _(NT_EXPONENTIATION) \
-        _(NT_ROOT) \
+        _(NT_NTHROOT) \
+        _(NT_MODULO) \
+        _(NT_LOG) \
         _(NT_NEGATIVE) \
         _(NT_EQUAL) \
         _(NT_NOTEQUAL) \
