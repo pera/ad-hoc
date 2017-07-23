@@ -5,6 +5,10 @@ AC_PREREQ([2.69])
 AC_INIT([Ad-hoc], [0.1.0])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
+AC_ARG_ENABLE([debug],
+[AS_HELP_STRING([--enable-debug],[Turn on debugging])],
+[CFLAGS='-ggdb'; AC_DEFINE([AH_DEBUG])])
+
 # Checks for programs.
 AC_PROG_YACC
 AC_PROG_CC
