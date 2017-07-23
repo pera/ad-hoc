@@ -39,7 +39,7 @@ Y := [f | [x | x@x] @ [g | f @ [a | (g@g)@a]]];
 fac := Y @ [f | [x | if x<2 [1] [x*f{x-1}]]];
 ```
 
-As we have already shown, mathematical expressions are written using infix notation. Aside from the well-known symbols for addition (`+`), subtraction (`-`), multiplication (`*`) and division (`/`), Ad-hoc also provides `**` for exponentiation, `//` for the *n*th root, `mod` for modulo and `log` for natural logarithm.
+As we have already shown, mathematical expressions are written using infix notation. Aside from the well-known symbols for addition (`+`), subtraction (`-`), multiplication (`*`) and division (`/`), Ad-hoc also provides `**` for exponentiation, `//` for the *n*th root, `%` for modulo and `log` for natural logarithm.
 
 Binary relations (i.e. `=`, `<`, `<=`, `>`, `>=`) are also expressed as usual, and they evaluate to a boolean value. The keywords for boolean literals are `true` and `false`, and the logical operators are `and`, `or` and `not`.
 
