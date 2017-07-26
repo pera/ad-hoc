@@ -94,7 +94,7 @@ expr
 | list { $$ = new_list($1); }
 | IDENT { $$ = new_ident($1); }
 | IDENT BIND expr { $$ = new_asgn($1, $3); }
-| IDENT ':' IDENT BIND expr { $$ = new_asgn($1, $5); }
+| IDENT ':' type BIND expr { $$ = new_asgn($1, $5); }
 | expr '+' expr { $$ = new_ast(NT_ADDITION, $1, $3); }
 | expr '-' expr { $$ = new_ast(NT_SUBTRACTION, $1, $3); }
 | expr '*' expr { $$ = new_ast(NT_MULTIPLICATION, $1, $3); }
@@ -127,6 +127,10 @@ lit
 : NUMBER { $$ = new_num($1); }
 | TRUE { $$ = new_bool(true); }
 | FALSE { $$ = new_bool(false); }
+;
+
+type
+: IDENT
 ;
 
 thunk
