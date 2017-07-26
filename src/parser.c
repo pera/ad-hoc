@@ -149,10 +149,23 @@ ast *new_force(ast *thunk) {
 	a->type = NT_FORCE;
 	a->children = &thunk->siblings;
 
-	AH_PRINT("\t(!) new apply [%p]\n", a);
+	AH_PRINT("\t(!) new force [%p]\n", a);
 
 	return a;
 }
+
+ast *new_free(ast *expr) {
+	ast *a = ah_malloc(sizeof(ast));
+	INIT_LIST_HEAD(&a->siblings);
+
+	a->type = NT_FREE;
+	a->children = &expr->siblings;
+
+	AH_PRINT("\t(!) new free [%p]\n", a);
+
+	return a;
+}
+
 ast *new_if(ast *expr, ast *t, ast *f) {
 	node_if *a = ah_malloc(sizeof(node_if));
 	INIT_LIST_HEAD(&a->siblings);

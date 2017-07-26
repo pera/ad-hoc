@@ -16,6 +16,7 @@
 ":="        { return BIND; }
 "("         { return '('; }
 ")"         { return ')'; }
+"#"         { return '#'; }
  /* lambda abstraction term */
 "["         { return '['; }
 "]"         { return ']'; }

@@ -96,6 +96,12 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			free_symtab(inner_symtab);
 			break;
 		}
+		case NT_FREE: {
+			ast *p;
+			AH_PRINT("FREE ENV (nothing to do): ");
+			AH_NODE_INFO(ast_right(a));
+			break;
+		}
 		case NT_LIST:
 		case NT_ADDITION:
 		case NT_SUBTRACTION:
@@ -897,6 +903,12 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_FORCE:
 				eval_forced(ast_left(a), st, res);
 				break;
+			case NT_FREE:
+				if (ast_left(a)->type == NT_IDENTIFIER)
+					eval(ast_left(a), st, res);
+				else
+					eval(ast_left(a), new_symtab(NULL), res);
+				break;
 			case NT_FUNCTION: {
 				ast *p;
 				list_for_each_entry(p, ((node_function *)a)->args, siblings) {
@@ -1006,12 +1018,15 @@ void print_value(value *v) {
 				printf("}");
 				break;
 			}
-			case VT_NOTHING:
-				break;
 			default:
 				AH_PRINTX("unknown value type\n");
+				exit(EXIT_FAILURE);
 		}
 	}
+
+	if (v->type == VT_NOTHING)
+		return;
+
 	printf("==> ");
 	print_value_(v);
 	printf("\n");

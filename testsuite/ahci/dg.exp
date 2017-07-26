@@ -1,4 +1,4 @@
-set timeout 1
+set timeout 3
 global AHCI
 
 set tests {
@@ -20,14 +20,19 @@ set tests {
 	{ "misc16" "([x|[a|b:=[x];b+a]]@10)@6\r" "\n==> 16.000000" }
 	{ "misc17" "([f|[f@f]]@[x|x])@17\r" "\n==> 17.000000" }
 	{ "misc18" "f:=[x|f];f;123456;[f];18\r" "\n==> 18.000000" }
+	{ "misc19" "[ x:=123; [x,t|t!]{19,[#x]} ]!\r" "\n==> 19.000000" }
+	{ "misc20" "[ x:=123; [x,t|t!]{20,#[x]} ]!\r" "\n==> 20.000000" }
+	{ "misc20" "[ x:=123; [x,f|f@0]{21,#[a|x]} ]!\r" "\n==> 21.000000" }
 }
 
 foreach test $tests {
+	send_log "\nRunning test \"[lindex $test 0]\"...\n\n"
 	spawn ${AHCI}
 	send [lindex $test 1]
 	expect {
 		-re [lindex $test 2] { pass [lindex $test 0] }
 		default { fail [lindex $test 0] }
 	}
+	send_log "\n"
 }
 

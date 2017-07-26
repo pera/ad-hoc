@@ -66,6 +66,7 @@ extern void yyerror(ast**, char const*);
 %precedence ','
 %precedence '@'
 %precedence '!'
+%precedence '#'
 
 %parse-param { ast **root }
 
@@ -117,6 +118,7 @@ expr
 | expr list { if (!($$ = new_apply($1, $2))) YYABORT; }
 | expr '@' params_high { $$ = new_apply($1, $3); }
 | expr '!' { $$ = new_force($1); }
+| '#' expr { $$ = new_free($2); }
 | IF expr thunk thunk { $$ = new_if($2, $3, $4); }
 | built_in
 ;
