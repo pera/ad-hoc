@@ -95,9 +95,9 @@ void build_environment(symtab *parent_symtab, symtab *local_symtab, symtab *env,
 			free_symtab(inner_symtab);
 			break;
 		}
-		case NT_FREE: {
+		case NT_ISOLATE: {
 			ast *p;
-			AH_PRINT("FREE ENV (nothing to do): ");
+			AH_PRINT("ISOLATED ENV (nothing to do): ");
 			AH_NODE_INFO(ast_right(a));
 			break;
 		}
@@ -909,6 +909,15 @@ void eval(ast *a, symtab *st, value *res) {
 				symbol *s = sym_lookup(st, ((node_identifier *)a)->i);
 				if (s) {
 					get_value(s, res);
+					// checking for free vars then dynamic scope:
+					switch (res->type) {
+						case VT_FUNCTION:
+							//get_environment(st, res->value.f.node);
+							break;
+						case VT_THUNK:
+							//get_environment(st, res->value.t.node);
+							break;
+					}
 				} else {
 					AH_PRINT_ERROR("identifier \"%s\" is not in context\n", ((node_identifier *)a)->i);
 					res->type = VT_NOTHING;
@@ -923,7 +932,7 @@ void eval(ast *a, symtab *st, value *res) {
 			case NT_FORCE:
 				eval_forced(ast_left(a), st, res);
 				break;
-			case NT_FREE:
+			case NT_ISOLATE:
 				if (ast_left(a)->type == NT_IDENTIFIER)
 					eval(ast_left(a), st, res);
 				else
@@ -1082,8 +1091,8 @@ int main(int argc, char **argv) {
 		value res;
 		list_for_each_entry(p, &a->siblings, siblings) {
 			eval(p, global_symtab, &res);
-			print_value(&res);
 		}
+		print_value(&res);
 
 		free_ast(&a);
 

@@ -46,7 +46,7 @@ typedef enum function_type function_type;
         _(NT_FUNCTION) \
         _(NT_THUNK) \
         _(NT_FORCE) \
-        _(NT_FREE) \
+        _(NT_ISOLATE) \
         _(NT_APPLY) \
         _(NT_ADDITION) \
         _(NT_SUBTRACTION) \
@@ -111,7 +111,7 @@ ast *new_thunk(ast*);
 ast *new_list(ast*);
 ast *new_apply(ast*, ast*);
 ast *new_force(ast*);
-ast *new_free(ast*);
+ast *new_isolate(ast*);
 ast *new_if(ast*, ast*, ast*);
 ast *new_builtin(node_type);
 

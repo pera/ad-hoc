@@ -154,14 +154,14 @@ ast *new_force(ast *thunk) {
 	return a;
 }
 
-ast *new_free(ast *expr) {
+ast *new_isolate(ast *expr) {
 	ast *a = ah_malloc(sizeof(ast));
 	INIT_LIST_HEAD(&a->siblings);
 
-	a->type = NT_FREE;
+	a->type = NT_ISOLATE;
 	a->children = &expr->siblings;
 
-	AH_PRINT("\t(!) new free [%p]\n", a);
+	AH_PRINT("\t(!) new isolate [%p]\n", a);
 
 	return a;
 }

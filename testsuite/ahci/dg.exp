@@ -23,6 +23,8 @@ set tests {
 	{ "misc19" "[ x:=123; [x,t|t!]{19,[#x]} ]!\r" "\n==> 19.000000" }
 	{ "misc20" "[ x:=123; [x,t|t!]{20,#[x]} ]!\r" "\n==> 20.000000" }
 	{ "misc21" "[ x:=123; [x,f|f@0]{21,#[a|x]} ]!\r" "\n==> 21.000000" }
+	{ "misc22" "([t|c:=4;t]@[t|b:=8;t]@[t|a:=10;t]@[a+b+c])!\r" "\n==> 22.000000" }
+	{ "misc23" "[f|f@20]@[a,f|f]@3,[b|a+b]\r" "\n==> 23.000000" }
 }
 
 foreach test $tests {
@@ -31,6 +33,8 @@ foreach test $tests {
 	send [lindex $test 1]
 	expect {
 		-re [lindex $test 2] { pass [lindex $test 0] }
+		-re "\n==>" { fail [lindex $test 0] }
+		-re "ERROR" { fail [lindex $test 0] }
 		default { fail [lindex $test 0] }
 	}
 	send_log "\n"
